@@ -1,0 +1,23 @@
+{
+  "name": "propertycp-backend",
+  "version": "1.0.0",
+  "description": "PropertyCP Backend API with Bun + Hono + SQLite",
+  "type": "module",
+  "scripts": {
+    "dev": "bun run --hot src/index.ts",
+    "start": "bun run src/index.ts",
+    "db:init": "bun run src/db/init.ts"
+  },
+  "dependencies": {
+    "bcrypt": "^5.1.1",
+    "better-sqlite3": "^12.5.0",
+    "hono": "^3.12.0",
+    "jsonwebtoken": "^9.0.2"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.8",
+    "@types/bcrypt": "^5.0.2",
+    "@types/jsonwebtoken": "^9.0.5",
+    "bun-types": "latest"
+  }
+}

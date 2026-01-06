@@ -1,0 +1,44 @@
+.DS_Store
+
+# Node
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
+*.log
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Coverage, reports
+coverage/
+debug/
+logs/
+
+# Build / cache
+dist/
+build/
+.cache/
+.cache-loader/
+.next/
+.out/
+public/build/
+
+# Docker
+docker-compose.override.yml
+
+# Editor
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+
+# Misc
+*.bak
+*.tmp
+*.swp
+thumbs.db

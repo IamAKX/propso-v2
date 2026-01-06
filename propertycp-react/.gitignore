@@ -1,0 +1,23 @@
+# Node
+node_modules/
+
+# Build
+build/
+dist/
+.cache/
+
+# Environment
+.env
+
+# Editor
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+
+# Logs
+*.log
+
+# Public assets
+/public/build/
