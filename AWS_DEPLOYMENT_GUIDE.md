@@ -233,8 +233,15 @@ openssl rand -base64 48
 # Make sure you're in the project directory
 cd ~/propertycp
 
-# Build and start services
+# Start services (fast)
 docker-compose up -d --build
+
+# Full rebuild and recreate (recommended when you changed environment variables, frontend build, or Dockerfiles):
+# If you have Docker Compose v2 (recommended):
+docker compose down && docker compose up -d --build --force-recreate --remove-orphans
+# If you have the older docker-compose CLI:
+docker-compose down && docker-compose up -d --build --force-recreate --remove-orphans
+```
 
 # This will:
 # 1. Build backend Docker image
