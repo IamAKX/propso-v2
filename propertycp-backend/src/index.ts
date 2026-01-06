@@ -23,10 +23,32 @@ try {
 const app = new Hono();
 
 // Middleware
-app.use('*', cors({
-  origin: ['http://localhost:3000', 'http://localhost:3001'],
-  credentials: true,
-}));
+const allowedOrigins = process.env.CORS_ORIGIN
+  ? process.env.CORS_ORIGIN.split(',').map((s) => s.trim())
+  : ['http://localhost:3000', 'http://localhost:3001'];
+
+// CORS middleware: keep localhost by default; optionally allow all IP origins or all origins using env flags
+app.use('*', async (c, next) => {
+  const origin = c.req.headers.get('origin') || '';
+  const allowAll = process.env.CORS_ALLOW_ALL === 'true';
+  const allowAllIPs = process.env.CORS_ALLOW_ALL_IPS === 'true';
+  const isIpOrigin = /^https?:\/\/\d+\.\d+\.\d+\.\d+(?::\d+)?$/.test(origin);
+
+  if (allowAll || allowedOrigins.includes(origin) || (allowAllIPs && isIpOrigin)) {
+    // When allowing credentials, we must echo the request origin (cannot use '*')
+    c.header('Access-Control-Allow-Origin', allowAll ? (origin || '*') : origin);
+    c.header('Access-Control-Allow-Credentials', 'true');
+    c.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    c.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+
+    // Handle preflight
+    if (c.req.method === 'OPTIONS') {
+      return c.text('', 204);
+    }
+  }
+
+  return await next();
+});
 app.use('*', logger());
 
 // Health check
