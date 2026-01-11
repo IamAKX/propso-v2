@@ -19,6 +19,8 @@ import {
 import { AddBox, Send } from '@mui/icons-material';
 import { useAuth } from '../context/AuthContext';
 import { useData } from '../context/DataContext';
+import MediaUploadManager from '../components/MediaUploadManager';
+import { uploadPropertyFiles } from '../services/s3Upload';
 
 const PostProperty = () => {
   const navigate = useNavigate();
@@ -42,6 +44,9 @@ const PostProperty = () => {
     description: '',
     builderPhoneNumber: user?.mobileNo || '',
   });
+  const [mediaFiles, setMediaFiles] = useState([]);
+  const [mainImageId, setMainImageId] = useState(null);
+  const [uploading, setUploading] = useState(false);
 
   const handleChange = (e) => {
     setFormData({
@@ -49,6 +54,18 @@ const PostProperty = () => {
       [e.target.name]: e.target.value,
     });
     setError('');
+  };
+
+  const handleMediaSelected = (files) => {
+    setMediaFiles(files);
+    setError('');
+  };
+
+  const handleMediaDeleted = (fileId) => {
+    setMediaFiles(mediaFiles.filter(f => f.id !== fileId));
+    if (mainImageId === fileId) {
+      setMainImageId(null);
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -93,6 +110,23 @@ const PostProperty = () => {
       };
 
       const newProperty = await createProperty(propertyData);
+      
+      // Upload media files if any
+      if (mediaFiles.length > 0) {
+        try {
+          const uploadedFiles = await uploadPropertyFiles(newProperty.id, mediaFiles, mainImageId);
+          // Update property with uploaded file URLs
+          await createProperty({
+            ...newProperty,
+            images: uploadedFiles,
+            mainImage: mainImageId ? uploadedFiles.find(f => f.id === mainImageId)?.link : uploadedFiles[0]?.link || newProperty.mainImage,
+          });
+        } catch (uploadErr) {
+          console.error('Media upload failed, but property created:', uploadErr);
+          // Continue even if media upload fails
+        }
+      }
+      
       setSuccess(true);
       setTimeout(() => {
         navigate(`/property/${newProperty.id}`);
@@ -101,6 +135,7 @@ const PostProperty = () => {
       setError(err.message || 'Failed to create property. Please try again.');
     } finally {
       setLoading(false);
+      setUploading(false);
     }
   };
 
@@ -332,17 +367,40 @@ const PostProperty = () => {
                   />
                 </Grid>
 
+                {/* Media Upload Section */}
+                <Grid item xs={12}>
+                  <Typography variant="h6" gutterBottom sx={{ mt: 2 }}>
+                    Property Media
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                    Upload up to 5 images and 1 video for your property
+                  </Typography>
+                </Grid>
+
+                <Grid item xs={12}>
+                  <MediaUploadManager
+                    onFilesSelected={handleMediaSelected}
+                    onFileDeleted={handleMediaDeleted}
+                    initialFiles={mediaFiles}
+                    maxImages={5}
+                    maxVideos={1}
+                    mainImageId={mainImageId}
+                    onMainImageSelect={setMainImageId}
+                    loading={uploading}
+                  />
+                </Grid>
+
                 <Grid item xs={12}>
                   <Button
                     fullWidth
                     type="submit"
                     variant="contained"
                     size="large"
-                    disabled={loading || success || !isActive}
-                    startIcon={loading ? <CircularProgress size={20} /> : <Send />}
+                    disabled={loading || success || !isActive || uploading}
+                    startIcon={loading || uploading ? <CircularProgress size={20} /> : <Send />}
                     sx={{ mt: 2, py: 1.5 }}
                   >
-                    {loading ? 'Creating Property...' : 'Create Property'}
+                    {loading || uploading ? 'Creating Property...' : 'Create Property'}
                   </Button>
                 </Grid>
               </Grid>
@@ -354,8 +412,8 @@ const PostProperty = () => {
         <Card sx={{ mt: 3, bgcolor: 'info.lighter' }}>
           <CardContent>
             <Typography variant="body2" color="info.dark">
-              <strong>Note:</strong> After creating the property, you can add more images and
-              videos from the property detail page. Make sure all information is accurate.
+              <strong>Note:</strong> You can add media files during property creation or edit them
+              later from the property detail page. All images should be clear and properly oriented.
             </Typography>
           </CardContent>
         </Card>

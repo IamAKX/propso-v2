@@ -24,6 +24,8 @@ import {
   CreditCard,
 } from '@mui/icons-material';
 import { useAuth } from '../context/AuthContext';
+import KYCDocumentUpload from '../components/KYCDocumentUpload';
+import { uploadKYCDocument, deleteKYCDocument } from '../services/s3Upload';
 
 const KYC = () => {
   const navigate = useNavigate();
@@ -36,6 +38,7 @@ const KYC = () => {
     aadharBack: null,
     panCard: null,
   });
+  const [uploading, setUploading] = useState(false);
 
   const handleFileChange = (e, documentType) => {
     const file = e.target.files[0];
@@ -54,27 +57,47 @@ const KYC = () => {
     }
   };
 
+  const handleKYCUpload = async (documentType, s3Url) => {
+    setDocuments(prev => ({
+      ...prev,
+      [documentType]: {
+        ...prev[documentType],
+        s3Url,
+      },
+    }));
+  };
+
+  const handleKYCDelete = async (documentType) => {
+    setDocuments(prev => ({
+      ...prev,
+      [documentType]: null,
+    }));
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
     setSuccess(false);
 
-    // Validation
-    if (!documents.aadharFront || !documents.aadharBack || !documents.panCard) {
+    // Validation - check for S3 URLs instead of local files
+    const aadharFrontUrl = documents.aadharFront?.s3Url;
+    const aadharBackUrl = documents.aadharBack?.s3Url;
+    const panCardUrl = documents.panCard?.s3Url;
+
+    if (!aadharFrontUrl || !aadharBackUrl || !panCardUrl) {
       setError('Please upload all required documents');
       return;
     }
 
     setLoading(true);
     try {
-      // Simulate document upload and update user KYC status
-      // In a real app, you would upload files to a server
+      // Update user with S3 URLs
       await updateUserData(user.id, {
         isKycVerified: false, // Initially not verified
         status: 'PENDING', // Change status to PENDING
-        aadharFront: documents.aadharFront.preview,
-        aadharBack: documents.aadharBack.preview,
-        panCard: documents.panCard.preview,
+        aadhar_front: aadharFrontUrl,
+        aadhar_back: aadharBackUrl,
+        pan: panCardUrl,
       });
 
       await refreshUser();
@@ -177,128 +200,38 @@ const KYC = () => {
           <Grid container spacing={3}>
             {/* Aadhar Front */}
             <Grid item xs={12}>
-              <Card>
-                <CardContent>
-                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                    <Description color="primary" sx={{ mr: 1, fontSize: 30 }} />
-                    <Box>
-                      <Typography variant="h6" fontWeight="600">
-                        Aadhar Card (Front)
-                      </Typography>
-                      <Typography variant="caption" color="text.secondary">
-                        Upload the front side of your Aadhar card
-                      </Typography>
-                    </Box>
-                  </Box>
-
-                  <Button
-                    variant="outlined"
-                    component="label"
-                    startIcon={<CloudUpload />}
-                    fullWidth
-                  >
-                    Choose File
-                    <input
-                      type="file"
-                      hidden
-                      accept="image/*"
-                      onChange={(e) => handleFileChange(e, 'aadharFront')}
-                    />
-                  </Button>
-
-                  {documents.aadharFront && (
-                    <Paper elevation={0} sx={{ mt: 2, p: 2, bgcolor: 'success.lighter' }}>
-                      <Typography variant="body2" color="success.dark">
-                        ✓ {documents.aadharFront.name}
-                      </Typography>
-                    </Paper>
-                  )}
-                </CardContent>
-              </Card>
+              <KYCDocumentUpload
+                documentType="aadhar_front"
+                label="Aadhar Card (Front)"
+                initialUrl={documents.aadharFront?.s3Url}
+                onUpload={(url) => handleKYCUpload('aadharFront', url)}
+                onDelete={() => handleKYCDelete('aadharFront')}
+                loading={uploading}
+              />
             </Grid>
 
             {/* Aadhar Back */}
             <Grid item xs={12}>
-              <Card>
-                <CardContent>
-                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                    <Description color="primary" sx={{ mr: 1, fontSize: 30 }} />
-                    <Box>
-                      <Typography variant="h6" fontWeight="600">
-                        Aadhar Card (Back)
-                      </Typography>
-                      <Typography variant="caption" color="text.secondary">
-                        Upload the back side of your Aadhar card
-                      </Typography>
-                    </Box>
-                  </Box>
-
-                  <Button
-                    variant="outlined"
-                    component="label"
-                    startIcon={<CloudUpload />}
-                    fullWidth
-                  >
-                    Choose File
-                    <input
-                      type="file"
-                      hidden
-                      accept="image/*"
-                      onChange={(e) => handleFileChange(e, 'aadharBack')}
-                    />
-                  </Button>
-
-                  {documents.aadharBack && (
-                    <Paper elevation={0} sx={{ mt: 2, p: 2, bgcolor: 'success.lighter' }}>
-                      <Typography variant="body2" color="success.dark">
-                        ✓ {documents.aadharBack.name}
-                      </Typography>
-                    </Paper>
-                  )}
-                </CardContent>
-              </Card>
+              <KYCDocumentUpload
+                documentType="aadhar_back"
+                label="Aadhar Card (Back)"
+                initialUrl={documents.aadharBack?.s3Url}
+                onUpload={(url) => handleKYCUpload('aadharBack', url)}
+                onDelete={() => handleKYCDelete('aadharBack')}
+                loading={uploading}
+              />
             </Grid>
 
             {/* PAN Card */}
             <Grid item xs={12}>
-              <Card>
-                <CardContent>
-                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                    <CreditCard color="primary" sx={{ mr: 1, fontSize: 30 }} />
-                    <Box>
-                      <Typography variant="h6" fontWeight="600">
-                        PAN Card
-                      </Typography>
-                      <Typography variant="caption" color="text.secondary">
-                        Upload your PAN card
-                      </Typography>
-                    </Box>
-                  </Box>
-
-                  <Button
-                    variant="outlined"
-                    component="label"
-                    startIcon={<CloudUpload />}
-                    fullWidth
-                  >
-                    Choose File
-                    <input
-                      type="file"
-                      hidden
-                      accept="image/*"
-                      onChange={(e) => handleFileChange(e, 'panCard')}
-                    />
-                  </Button>
-
-                  {documents.panCard && (
-                    <Paper elevation={0} sx={{ mt: 2, p: 2, bgcolor: 'success.lighter' }}>
-                      <Typography variant="body2" color="success.dark">
-                        ✓ {documents.panCard.name}
-                      </Typography>
-                    </Paper>
-                  )}
-                </CardContent>
-              </Card>
+              <KYCDocumentUpload
+                documentType="pan"
+                label="PAN Card"
+                initialUrl={documents.panCard?.s3Url}
+                onUpload={(url) => handleKYCUpload('panCard', url)}
+                onDelete={() => handleKYCDelete('panCard')}
+                loading={uploading}
+              />
             </Grid>
 
             {/* Submit Button */}
@@ -308,7 +241,7 @@ const KYC = () => {
                 type="submit"
                 variant="contained"
                 size="large"
-                disabled={loading || success}
+                disabled={loading || success || uploading}
                 startIcon={loading ? <CircularProgress size={20} /> : <CheckCircle />}
                 sx={{ py: 1.5 }}
               >
