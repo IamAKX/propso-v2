@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   Box,
   Container,
@@ -15,34 +15,34 @@ import {
   CircularProgress,
   Grid,
   InputAdornment,
-} from '@mui/material';
-import { AddBox, Send } from '@mui/icons-material';
-import { useAuth } from '../context/AuthContext';
-import { useData } from '../context/DataContext';
-import MediaUploadManager from '../components/MediaUploadManager';
-import { uploadPropertyFiles } from '../services/s3Upload';
+} from "@mui/material";
+import { AddBox, Send } from "@mui/icons-material";
+import { useAuth } from "../context/AuthContext";
+import { useData } from "../context/DataContext";
+import MediaUploadManager from "../components/MediaUploadManager";
+import { uploadPropertyFiles } from "../services/s3Upload";
 
 const PostProperty = () => {
   const navigate = useNavigate();
   const { user, isActive } = useAuth();
   const { createProperty } = useData();
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
   const [formData, setFormData] = useState({
-    title: '',
-    subTitle: '',
-    price: '',
-    numberOfRooms: '',
-    bhk: '',
-    location: '',
-    city: '',
-    mainImage: '',
-    type: 'Residential',
-    area: '',
-    areaUnit: 'Sqft',
-    description: '',
-    builderPhoneNumber: user?.mobileNo || '',
+    title: "",
+    subTitle: "",
+    price: "",
+    numberOfRooms: "",
+    bhk: "",
+    location: "",
+    city: "",
+    mainImage: "",
+    type: "Residential",
+    area: "",
+    areaUnit: "Sqft",
+    description: "",
+    builderPhoneNumber: user?.mobileNo || "",
   });
   const [mediaFiles, setMediaFiles] = useState([]);
   const [mainImageId, setMainImageId] = useState(null);
@@ -53,16 +53,16 @@ const PostProperty = () => {
       ...formData,
       [e.target.name]: e.target.value,
     });
-    setError('');
+    setError("");
   };
 
   const handleMediaSelected = (files) => {
     setMediaFiles(files);
-    setError('');
+    setError("");
   };
 
   const handleMediaDeleted = (fileId) => {
-    setMediaFiles(mediaFiles.filter(f => f.id !== fileId));
+    setMediaFiles(mediaFiles.filter((f) => f.id !== fileId));
     if (mainImageId === fileId) {
       setMainImageId(null);
     }
@@ -70,32 +70,42 @@ const PostProperty = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError('');
+    setError("");
     setSuccess(false);
 
     // Validation
-    if (!formData.title || !formData.price || !formData.city || !formData.location) {
-      setError('Please fill in all required fields');
+    if (
+      !formData.title ||
+      !formData.price ||
+      !formData.city ||
+      !formData.location
+    ) {
+      setError("Please fill in all required fields");
       return;
     }
 
     if (formData.title.length < 5) {
-      setError('Title must be at least 5 characters');
+      setError("Title must be at least 5 characters");
       return;
     }
 
     if (isNaN(formData.price) || parseInt(formData.price) <= 0) {
-      setError('Please enter a valid price');
+      setError("Please enter a valid price");
       return;
     }
 
-    if (formData.builderPhoneNumber.length !== 10 || !/^\d+$/.test(formData.builderPhoneNumber)) {
-      setError('Phone number must be exactly 10 digits');
+    if (
+      formData.builderPhoneNumber.length !== 10 ||
+      !/^\d+$/.test(formData.builderPhoneNumber)
+    ) {
+      setError("Phone number must be exactly 10 digits");
       return;
     }
 
     if (!isActive) {
-      setError('Your account must be ACTIVE to post properties. Please complete KYC verification.');
+      setError(
+        "Your account must be ACTIVE to post properties. Please complete KYC verification."
+      );
       return;
     }
 
@@ -104,35 +114,46 @@ const PostProperty = () => {
       // Use a default image if none provided
       const propertyData = {
         ...formData,
-        mainImage: formData.mainImage || 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=800',
+        mainImage:
+          formData.mainImage ||
+          "https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=800",
         createdById: user.id,
         images: [],
       };
 
       const newProperty = await createProperty(propertyData);
-      
+
       // Upload media files if any
       if (mediaFiles.length > 0) {
         try {
-          const uploadedFiles = await uploadPropertyFiles(newProperty.id, mediaFiles, mainImageId);
+          const uploadedFiles = await uploadPropertyFiles(
+            newProperty.id,
+            mediaFiles,
+            mainImageId
+          );
           // Update property with uploaded file URLs
           await createProperty({
             ...newProperty,
             images: uploadedFiles,
-            mainImage: mainImageId ? uploadedFiles.find(f => f.id === mainImageId)?.link : uploadedFiles[0]?.link || newProperty.mainImage,
+            mainImage: mainImageId
+              ? uploadedFiles.find((f) => f.id === mainImageId)?.link
+              : uploadedFiles[0]?.link || newProperty.mainImage,
           });
         } catch (uploadErr) {
-          console.error('Media upload failed, but property created:', uploadErr);
+          console.error(
+            "Media upload failed, but property created:",
+            uploadErr
+          );
           // Continue even if media upload fails
         }
       }
-      
+
       setSuccess(true);
       setTimeout(() => {
         navigate(`/property/${newProperty.id}`);
       }, 1500);
     } catch (err) {
-      setError(err.message || 'Failed to create property. Please try again.');
+      setError(err.message || "Failed to create property. Please try again.");
     } finally {
       setLoading(false);
       setUploading(false);
@@ -153,8 +174,9 @@ const PostProperty = () => {
       <Container maxWidth="md" sx={{ py: 3, pb: 10 }}>
         {!isActive && (
           <Alert severity="warning" sx={{ mb: 3 }}>
-            Your account status is <strong>{user?.status}</strong>. You need an ACTIVE account
-            to post properties. Please complete KYC verification from your profile.
+            Your account status is <strong>{user?.status}</strong>. You need an
+            ACTIVE account to post properties. Please complete KYC verification
+            from your profile.
           </Alert>
         )}
 
@@ -233,7 +255,9 @@ const PostProperty = () => {
                     onChange={handleChange}
                     placeholder="e.g., 5000000"
                     InputProps={{
-                      startAdornment: <InputAdornment position="start">₹</InputAdornment>,
+                      startAdornment: (
+                        <InputAdornment position="start">₹</InputAdornment>
+                      ),
                     }}
                   />
                 </Grid>
@@ -372,7 +396,11 @@ const PostProperty = () => {
                   <Typography variant="h6" gutterBottom sx={{ mt: 2 }}>
                     Property Media
                   </Typography>
-                  <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                  <Typography
+                    variant="body2"
+                    color="text.secondary"
+                    sx={{ mb: 2 }}
+                  >
                     Upload up to 5 images and 1 video for your property
                   </Typography>
                 </Grid>
@@ -397,10 +425,18 @@ const PostProperty = () => {
                     variant="contained"
                     size="large"
                     disabled={loading || success || !isActive || uploading}
-                    startIcon={loading || uploading ? <CircularProgress size={20} /> : <Send />}
+                    startIcon={
+                      loading || uploading ? (
+                        <CircularProgress size={20} />
+                      ) : (
+                        <Send />
+                      )
+                    }
                     sx={{ mt: 2, py: 1.5 }}
                   >
-                    {loading || uploading ? 'Creating Property...' : 'Create Property'}
+                    {loading || uploading
+                      ? "Creating Property..."
+                      : "Create Property"}
                   </Button>
                 </Grid>
               </Grid>
@@ -409,11 +445,12 @@ const PostProperty = () => {
         </Card>
 
         {/* Information Card */}
-        <Card sx={{ mt: 3, bgcolor: 'info.lighter' }}>
+        <Card sx={{ mt: 3, bgcolor: "info.lighter" }}>
           <CardContent>
             <Typography variant="body2" color="info.dark">
-              <strong>Note:</strong> You can add media files during property creation or edit them
-              later from the property detail page. All images should be clear and properly oriented.
+              <strong>Note:</strong> You can add media files during property
+              creation or edit them later from the property detail page. All
+              images should be clear and properly oriented.
             </Typography>
           </CardContent>
         </Card>

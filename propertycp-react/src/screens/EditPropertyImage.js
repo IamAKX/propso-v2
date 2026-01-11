@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import React, { useState, useEffect } from "react";
+import { useNavigate, useParams } from "react-router-dom";
 import {
   Box,
   Container,
@@ -14,11 +14,11 @@ import {
   Paper,
   CircularProgress,
   Alert,
-} from '@mui/material';
-import { ArrowBack, CloudUpload, Delete } from '@mui/icons-material';
-import { useData } from '../context/DataContext';
-import MediaUploadManager from '../components/MediaUploadManager';
-import { uploadPropertyFiles, deletePropertyFile } from '../services/s3Upload';
+} from "@mui/material";
+import { ArrowBack, CloudUpload, Delete } from "@mui/icons-material";
+import { useData } from "../context/DataContext";
+import MediaUploadManager from "../components/MediaUploadManager";
+import { uploadPropertyFiles, deletePropertyFile } from "../services/s3Upload";
 
 const EditPropertyImage = () => {
   const navigate = useNavigate();
@@ -28,7 +28,7 @@ const EditPropertyImage = () => {
   const [loading, setLoading] = useState(true);
   const [images, setImages] = useState([]);
   const [uploading, setUploading] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
   const [mainImageId, setMainImageId] = useState(null);
 
   useEffect(() => {
@@ -41,21 +41,23 @@ const EditPropertyImage = () => {
       const data = await fetchPropertyById(parseInt(id));
       setProperty(data);
       // Filter and format existing images from S3
-      const existingImages = (data.images || []).map(img => ({
+      const existingImages = (data.images || []).map((img) => ({
         id: img.id || img.fileId || Date.now(),
         link: img.link || img.url,
-        isVideo: img.isVideo || img.type === 'video',
+        isVideo: img.isVideo || img.type === "video",
         propertyId: parseInt(id),
       }));
       setImages(existingImages);
       // Set main image from property data
       if (data.mainImage) {
-        const mainImg = existingImages.find(img => img.link === data.mainImage);
+        const mainImg = existingImages.find(
+          (img) => img.link === data.mainImage
+        );
         if (mainImg) setMainImageId(mainImg.id);
       }
     } catch (error) {
-      console.error('Error loading property:', error);
-      setError('Failed to load property images');
+      console.error("Error loading property:", error);
+      setError("Failed to load property images");
     } finally {
       setLoading(false);
     }
@@ -70,33 +72,33 @@ const EditPropertyImage = () => {
       propertyId: parseInt(id),
     }));
     setImages([...images, ...newImages]);
-    setError('');
+    setError("");
   };
 
   const handleMediaSelected = (files) => {
     setImages(files);
-    setError('');
+    setError("");
   };
 
   const handleDeleteImage = async (imageId) => {
-    const image = images.find(img => img.id === imageId);
+    const image = images.find((img) => img.id === imageId);
     if (!image) return;
 
     setUploading(true);
     try {
       // If image has a URL (from S3), delete it from S3
-      if (image.link && image.link.includes('s3')) {
+      if (image.link && image.link.includes("s3")) {
         await deletePropertyFile(parseInt(id), imageId);
       }
-      
+
       // Remove from local state
       setImages(images.filter((img) => img.id !== imageId));
       if (mainImageId === imageId) {
         setMainImageId(null);
       }
     } catch (err) {
-      console.error('Error deleting image:', err);
-      setError('Failed to delete image. Please try again.');
+      console.error("Error deleting image:", err);
+      setError("Failed to delete image. Please try again.");
     } finally {
       setUploading(false);
     }
@@ -104,7 +106,14 @@ const EditPropertyImage = () => {
 
   if (loading) {
     return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh' }}>
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          minHeight: "100vh",
+        }}
+      >
         <CircularProgress />
       </Box>
     );

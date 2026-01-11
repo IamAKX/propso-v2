@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   Box,
   Container,
@@ -15,23 +15,23 @@ import {
   Grid,
   Paper,
   Divider,
-} from '@mui/material';
+} from "@mui/material";
 import {
   ArrowBack,
   CloudUpload,
   CheckCircle,
   Description,
   CreditCard,
-} from '@mui/icons-material';
-import { useAuth } from '../context/AuthContext';
-import KYCDocumentUpload from '../components/KYCDocumentUpload';
-import { uploadKYCDocument, deleteKYCDocument } from '../services/s3Upload';
+} from "@mui/icons-material";
+import { useAuth } from "../context/AuthContext";
+import KYCDocumentUpload from "../components/KYCDocumentUpload";
+import { uploadKYCDocument, deleteKYCDocument } from "../services/s3Upload";
 
 const KYC = () => {
   const navigate = useNavigate();
   const { user, updateUserData, refreshUser } = useAuth();
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
   const [documents, setDocuments] = useState({
     aadharFront: null,
@@ -53,12 +53,12 @@ const KYC = () => {
           name: file.name,
         },
       });
-      setError('');
+      setError("");
     }
   };
 
   const handleKYCUpload = async (documentType, s3Url) => {
-    setDocuments(prev => ({
+    setDocuments((prev) => ({
       ...prev,
       [documentType]: {
         ...prev[documentType],
@@ -68,7 +68,7 @@ const KYC = () => {
   };
 
   const handleKYCDelete = async (documentType) => {
-    setDocuments(prev => ({
+    setDocuments((prev) => ({
       ...prev,
       [documentType]: null,
     }));
@@ -76,7 +76,7 @@ const KYC = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError('');
+    setError("");
     setSuccess(false);
 
     // Validation - check for S3 URLs instead of local files
@@ -85,7 +85,7 @@ const KYC = () => {
     const panCardUrl = documents.panCard?.s3Url;
 
     if (!aadharFrontUrl || !aadharBackUrl || !panCardUrl) {
-      setError('Please upload all required documents');
+      setError("Please upload all required documents");
       return;
     }
 
@@ -94,7 +94,7 @@ const KYC = () => {
       // Update user with S3 URLs
       await updateUserData(user.id, {
         isKycVerified: false, // Initially not verified
-        status: 'PENDING', // Change status to PENDING
+        status: "PENDING", // Change status to PENDING
         aadhar_front: aadharFrontUrl,
         aadhar_back: aadharBackUrl,
         pan: panCardUrl,
@@ -104,16 +104,19 @@ const KYC = () => {
       setSuccess(true);
 
       setTimeout(() => {
-        navigate('/home', { state: { tab: 4 } }); // Navigate to Profile tab
+        navigate("/home", { state: { tab: 4 } }); // Navigate to Profile tab
       }, 2000);
     } catch (err) {
-      setError(err.message || 'Failed to submit KYC documents. Please try again.');
+      setError(
+        err.message || "Failed to submit KYC documents. Please try again."
+      );
     } finally {
       setLoading(false);
     }
   };
 
-  const isKycSubmitted = user?.status === 'PENDING' || user?.status === 'ACTIVE';
+  const isKycSubmitted =
+    user?.status === "PENDING" || user?.status === "ACTIVE";
 
   return (
     <Box>
@@ -131,22 +134,47 @@ const KYC = () => {
       <Container maxWidth="md" sx={{ py: 3, pb: 10 }}>
         {/* Status Card */}
         {isKycSubmitted && (
-          <Card sx={{ mb: 3, bgcolor: user?.status === 'ACTIVE' ? 'success.lighter' : 'warning.lighter' }}>
+          <Card
+            sx={{
+              mb: 3,
+              bgcolor:
+                user?.status === "ACTIVE"
+                  ? "success.lighter"
+                  : "warning.lighter",
+            }}
+          >
             <CardContent>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                {user?.status === 'ACTIVE' ? (
+              <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+                {user?.status === "ACTIVE" ? (
                   <CheckCircle color="success" sx={{ fontSize: 40 }} />
                 ) : (
                   <CloudUpload color="warning" sx={{ fontSize: 40 }} />
                 )}
                 <Box>
-                  <Typography variant="h6" fontWeight="600" color={user?.status === 'ACTIVE' ? 'success.dark' : 'warning.dark'}>
-                    {user?.status === 'ACTIVE' ? 'KYC Verified' : 'KYC Under Review'}
+                  <Typography
+                    variant="h6"
+                    fontWeight="600"
+                    color={
+                      user?.status === "ACTIVE"
+                        ? "success.dark"
+                        : "warning.dark"
+                    }
+                  >
+                    {user?.status === "ACTIVE"
+                      ? "KYC Verified"
+                      : "KYC Under Review"}
                   </Typography>
-                  <Typography variant="body2" color={user?.status === 'ACTIVE' ? 'success.dark' : 'warning.dark'}>
-                    {user?.status === 'ACTIVE'
-                      ? 'Your documents have been verified. You have full access to all features.'
-                      : 'Your documents are under review. You will be notified once approved.'}
+                  <Typography
+                    variant="body2"
+                    color={
+                      user?.status === "ACTIVE"
+                        ? "success.dark"
+                        : "warning.dark"
+                    }
+                  >
+                    {user?.status === "ACTIVE"
+                      ? "Your documents have been verified. You have full access to all features."
+                      : "Your documents are under review. You will be notified once approved."}
                   </Typography>
                 </Box>
               </Box>
@@ -161,7 +189,8 @@ const KYC = () => {
               Document Verification
             </Typography>
             <Typography variant="body2" color="text.secondary" paragraph>
-              Upload the following documents to complete your KYC verification and unlock all features.
+              Upload the following documents to complete your KYC verification
+              and unlock all features.
             </Typography>
             <Divider sx={{ my: 2 }} />
             <Typography variant="body2" color="text.secondary">
@@ -184,8 +213,8 @@ const KYC = () => {
 
         {success && (
           <Alert severity="success" sx={{ mb: 3 }}>
-            KYC documents submitted successfully! Your documents are now under review.
-            Redirecting to profile...
+            KYC documents submitted successfully! Your documents are now under
+            review. Redirecting to profile...
           </Alert>
         )}
 
@@ -204,8 +233,8 @@ const KYC = () => {
                 documentType="aadhar_front"
                 label="Aadhar Card (Front)"
                 initialUrl={documents.aadharFront?.s3Url}
-                onUpload={(url) => handleKYCUpload('aadharFront', url)}
-                onDelete={() => handleKYCDelete('aadharFront')}
+                onUpload={(url) => handleKYCUpload("aadharFront", url)}
+                onDelete={() => handleKYCDelete("aadharFront")}
                 loading={uploading}
               />
             </Grid>
@@ -216,8 +245,8 @@ const KYC = () => {
                 documentType="aadhar_back"
                 label="Aadhar Card (Back)"
                 initialUrl={documents.aadharBack?.s3Url}
-                onUpload={(url) => handleKYCUpload('aadharBack', url)}
-                onDelete={() => handleKYCDelete('aadharBack')}
+                onUpload={(url) => handleKYCUpload("aadharBack", url)}
+                onDelete={() => handleKYCDelete("aadharBack")}
                 loading={uploading}
               />
             </Grid>
@@ -228,8 +257,8 @@ const KYC = () => {
                 documentType="pan"
                 label="PAN Card"
                 initialUrl={documents.panCard?.s3Url}
-                onUpload={(url) => handleKYCUpload('panCard', url)}
-                onDelete={() => handleKYCDelete('panCard')}
+                onUpload={(url) => handleKYCUpload("panCard", url)}
+                onDelete={() => handleKYCDelete("panCard")}
                 loading={uploading}
               />
             </Grid>
@@ -242,21 +271,24 @@ const KYC = () => {
                 variant="contained"
                 size="large"
                 disabled={loading || success || uploading}
-                startIcon={loading ? <CircularProgress size={20} /> : <CheckCircle />}
+                startIcon={
+                  loading ? <CircularProgress size={20} /> : <CheckCircle />
+                }
                 sx={{ py: 1.5 }}
               >
-                {loading ? 'Submitting...' : 'Submit for Verification'}
+                {loading ? "Submitting..." : "Submit for Verification"}
               </Button>
             </Grid>
           </Grid>
         </form>
 
         {/* Info Card */}
-        <Card sx={{ mt: 3, bgcolor: 'info.lighter' }}>
+        <Card sx={{ mt: 3, bgcolor: "info.lighter" }}>
           <CardContent>
             <Typography variant="body2" color="info.dark">
-              <strong>Privacy Note:</strong> Your documents are securely stored and will only be
-              used for verification purposes. Admin will review and approve your documents within 24-48 hours.
+              <strong>Privacy Note:</strong> Your documents are securely stored
+              and will only be used for verification purposes. Admin will review
+              and approve your documents within 24-48 hours.
             </Typography>
           </CardContent>
         </Card>
