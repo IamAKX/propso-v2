@@ -6,6 +6,7 @@ import userRoutes from './routes/users';
 import propertyRoutes from './routes/properties';
 import leadRoutes from './routes/leads';
 import favoriteRoutes from './routes/favorites';
+import uploadRoutes from './routes/uploads';
 import { initDatabase } from './db/database';
 import { seedDatabase } from './db/seed';
 
@@ -66,6 +67,7 @@ app.route('/api/users', userRoutes);
 app.route('/api/properties', propertyRoutes);
 app.route('/api/leads', leadRoutes);
 app.route('/api/favorites', favoriteRoutes);
+app.route('/api/uploads', uploadRoutes);
 
 // 404 handler
 app.notFound((c) => {
