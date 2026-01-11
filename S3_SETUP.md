@@ -30,7 +30,7 @@
 1. Go to [AWS S3 Console](https://console.aws.amazon.com/s3/)
 2. Click "Create bucket"
 3. **Bucket name**: `propertycp-bucket` (use unique name)
-4. **Region**: `us-east-1` (or your preferred region)
+4. **Region**: `eu-north-1` (or your preferred region)
 5. Uncheck "Block all public access" (we need public read)
 6. Click "Create bucket"
 
@@ -104,7 +104,7 @@ Edit `/Users/akash/Desktop/Sanath/cp/.env`:
 
 ```bash
 # AWS S3 Configuration
-AWS_REGION=us-east-1
+AWS_REGION=eu-north-1
 AWS_ACCESS_KEY_ID=your-copied-access-key-id
 AWS_SECRET_ACCESS_KEY=your-copied-secret-access-key
 AWS_S3_BUCKET=propertycp-bucket
