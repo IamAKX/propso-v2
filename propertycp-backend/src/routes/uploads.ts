@@ -238,9 +238,15 @@ uploads.post('/kyc/:documentType', authMiddleware, async (c) => {
     const documentType = c.req.param('documentType'); // 'aadhar_front', 'aadhar_back', 'pan'
     const formData = await c.req.formData();
 
-    // Validate document type
-    const validTypes = ['aadhar_front', 'aadhar_back', 'pan'];
-    if (!validTypes.includes(documentType)) {
+    // Validate document type and map to actual DB column names
+    const columnMap: Record<string, string> = {
+      aadhar_front: 'aadhar_front',
+      aadhar_back: 'aadhar_back',
+      pan: 'pan',
+      pan_card: 'pan',
+    };
+
+    if (!Object.keys(columnMap).includes(documentType)) {
       return c.json(
         {
           success: false,
@@ -298,18 +304,20 @@ uploads.post('/kyc/:documentType', authMiddleware, async (c) => {
     });
 
     // If user already has this document, delete old one from S3
-    const user = db.prepare(`SELECT ${documentType} FROM users WHERE id = ?`).get(currentUser.id) as any;
-    if (user && user[documentType]) {
+    const snakeCaseColumn = columnMap[documentType];
+    const user = db.prepare(`SELECT ${snakeCaseColumn} FROM users WHERE id = ?`).get(currentUser.id) as any;
+    if (user && user[snakeCaseColumn]) {
       try {
-        await deleteFromS3(user[documentType]);
+        await deleteFromS3(user[snakeCaseColumn]);
       } catch (err) {
         console.error('Error deleting old document from S3:', err);
       }
     }
 
-    // Update user record
-    const snakeCaseColumn = documentType; // aadhar_front, aadhar_back, pan
-    db.prepare(`UPDATE users SET ${snakeCaseColumn} = ?, updated_date = datetime("now") WHERE id = ?`).run(url, currentUser.id);
+    // Update user record (coerce values to safe types for SQLite bindings)
+    const safeUrl = typeof url === 'string' ? url : String(url);
+    const safeUserId = typeof currentUser.id === 'number' ? currentUser.id : Number(currentUser.id);
+    db.prepare(`UPDATE users SET ${snakeCaseColumn} = ?, updated_date = datetime("now") WHERE id = ?`).run(safeUrl, safeUserId);
 
     return c.json({
       success: true,
@@ -339,9 +347,15 @@ uploads.delete('/kyc/:documentType', authMiddleware, async (c) => {
     const currentUser = c.get('user') as AuthUser;
     const documentType = c.req.param('documentType');
 
-    // Validate document type
-    const validTypes = ['aadhar_front', 'aadhar_back', 'pan'];
-    if (!validTypes.includes(documentType)) {
+    // Validate document type and map to actual DB column names
+    const columnMap: Record<string, string> = {
+      aadhar_front: 'aadhar_front',
+      aadhar_back: 'aadhar_back',
+      pan: 'pan',
+      pan_card: 'pan',
+    };
+
+    if (!Object.keys(columnMap).includes(documentType)) {
       return c.json(
         {
           success: false,
@@ -351,10 +365,11 @@ uploads.delete('/kyc/:documentType', authMiddleware, async (c) => {
       );
     }
 
-    // Get user's current document
-    const user = db.prepare(`SELECT ${documentType} FROM users WHERE id = ?`).get(currentUser.id) as any;
+    // Get user's current document (map to actual DB column)
+    const snakeCaseColumn = columnMap[documentType];
+    const user = db.prepare(`SELECT ${snakeCaseColumn} FROM users WHERE id = ?`).get(currentUser.id) as any;
 
-    if (!user || !user[documentType]) {
+    if (!user || !user[snakeCaseColumn]) {
       return c.json(
         {
           success: false,
@@ -365,10 +380,10 @@ uploads.delete('/kyc/:documentType', authMiddleware, async (c) => {
     }
 
     // Delete from S3
-    await deleteFromS3(user[documentType]);
+    await deleteFromS3(user[snakeCaseColumn]);
 
     // Clear from user record
-    db.prepare(`UPDATE users SET ${documentType} = NULL, updated_date = datetime("now") WHERE id = ?`).run(
+    db.prepare(`UPDATE users SET ${snakeCaseColumn} = NULL, updated_date = datetime("now") WHERE id = ?`).run(
       currentUser.id
     );
 

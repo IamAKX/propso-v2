@@ -14,7 +14,6 @@
     "bcrypt": "^5.1.1",
     "better-sqlite3": "^12.5.0",
     "hono": "^3.12.0",
-    "hono-multipart": "^1.0.0",
     "jsonwebtoken": "^9.0.2"
   },
   "devDependencies": {
