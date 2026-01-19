@@ -1,15 +1,25 @@
 import { S3Client, PutObjectCommand, DeleteObjectCommand, GetObjectCommand } from '@aws-sdk/client-s3';
 import { Upload } from '@aws-sdk/lib-storage';
 
+const AWS_REGION = process.env.AWS_REGION || 'eu-north-1';
+const BUCKET_NAME = process.env.AWS_S3_BUCKET || 'propertycp';
+
+console.log('🔧 S3 Configuration:', {
+  region: AWS_REGION,
+  bucket: BUCKET_NAME,
+  hasAccessKey: !!process.env.AWS_ACCESS_KEY_ID,
+  hasSecretKey: !!process.env.AWS_SECRET_ACCESS_KEY,
+});
+
 const s3Client = new S3Client({
-  region: process.env.AWS_REGION || 'us-east-1',
+  region: AWS_REGION,
   credentials: {
     accessKeyId: process.env.AWS_ACCESS_KEY_ID || '',
     secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || '',
   },
+  endpoint: `https://s3.${AWS_REGION}.amazonaws.com`,
+  forcePathStyle: false,
 });
-
-const BUCKET_NAME = process.env.AWS_S3_BUCKET || 'propertycp-bucket';
 
 interface UploadOptions {
   key: string;
@@ -31,17 +41,24 @@ export async function uploadToS3(options: UploadOptions): Promise<string> {
         Key: key,
         Body: body,
         ContentType: contentType,
-        ACL: 'public-read', // Make file publicly readable
+        // ACL removed - use bucket policy or presigned URLs instead
       },
     });
 
     await upload.done();
-    const fileUrl = `https://${BUCKET_NAME}.s3.amazonaws.com/${key}`;
+    const fileUrl = `https://${BUCKET_NAME}.s3.${AWS_REGION}.amazonaws.com/${key}`;
     console.log(`✅ File uploaded to S3: ${fileUrl}`);
     return fileUrl;
   } catch (error: any) {
     console.error('❌ S3 upload error:', error);
-    throw new Error(`Failed to upload file to S3: ${error.message}`);
+    console.error('Error details:', {
+      name: error.name,
+      message: error.message,
+      code: error.Code || error.$metadata?.httpStatusCode,
+      region: AWS_REGION,
+      bucket: BUCKET_NAME,
+    });
+    throw new Error(`Failed to upload file to S3: ${error.name || error.message}`);
   }
 }
 

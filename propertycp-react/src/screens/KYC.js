@@ -25,7 +25,7 @@ import {
 } from "@mui/icons-material";
 import { useAuth } from "../context/AuthContext";
 import KYCDocumentUpload from "../components/KYCDocumentUpload";
-import { uploadKYCDocument, deleteKYCDocument } from "../services/s3Upload";
+import { uploadKYCDocument } from "../services/s3Upload";
 
 const KYC = () => {
   const navigate = useNavigate();
@@ -40,34 +40,14 @@ const KYC = () => {
   });
   const [uploading, setUploading] = useState(false);
 
-  const handleFileChange = (e, documentType) => {
-    const file = e.target.files[0];
-    if (file) {
-      // Create a blob URL for preview (simulated upload)
-      const blobUrl = URL.createObjectURL(file);
-      setDocuments({
-        ...documents,
-        [documentType]: {
-          file,
-          preview: blobUrl,
-          name: file.name,
-        },
-      });
-      setError("");
-    }
-  };
-
-  const handleKYCUpload = async (documentType, s3Url) => {
+  const handleFileSelect = (documentType, file) => {
     setDocuments((prev) => ({
       ...prev,
-      [documentType]: {
-        ...prev[documentType],
-        s3Url,
-      },
+      [documentType]: file,
     }));
   };
 
-  const handleKYCDelete = async (documentType) => {
+  const handleKYCDelete = (documentType) => {
     setDocuments((prev) => ({
       ...prev,
       [documentType]: null,
@@ -79,18 +59,41 @@ const KYC = () => {
     setError("");
     setSuccess(false);
 
-    // Validation - check for S3 URLs instead of local files
-    const aadharFrontUrl = documents.aadharFront?.s3Url;
-    const aadharBackUrl = documents.aadharBack?.s3Url;
-    const panCardUrl = documents.panCard?.s3Url;
-
-    if (!aadharFrontUrl || !aadharBackUrl || !panCardUrl) {
-      setError("Please upload all required documents");
+    // Validation - check if all files are selected
+    if (!documents.aadharFront || !documents.aadharBack || !documents.panCard) {
+      setError("Please select all required documents");
       return;
     }
 
     setLoading(true);
+    setUploading(true);
+
     try {
+      // Upload all files to S3 first
+      const [aadharFrontResponse, aadharBackResponse, panCardResponse] =
+        await Promise.all([
+          uploadKYCDocument("aadhar_front", documents.aadharFront),
+          uploadKYCDocument("aadhar_back", documents.aadharBack),
+          uploadKYCDocument("pan", documents.panCard),
+        ]);
+
+      // Check if all uploads were successful
+      if (
+        !aadharFrontResponse.success ||
+        !aadharBackResponse.success ||
+        !panCardResponse.success
+      ) {
+        throw new Error("Failed to upload one or more documents to S3");
+      }
+
+      const aadharFrontUrl = aadharFrontResponse.data?.url;
+      const aadharBackUrl = aadharBackResponse.data?.url;
+      const panCardUrl = panCardResponse.data?.url;
+
+      if (!aadharFrontUrl || !aadharBackUrl || !panCardUrl) {
+        throw new Error("Failed to get S3 URLs for uploaded documents");
+      }
+
       // Update user with S3 URLs
       await updateUserData(user.id, {
         isKycVerified: false, // Initially not verified
@@ -112,6 +115,7 @@ const KYC = () => {
       );
     } finally {
       setLoading(false);
+      setUploading(false);
     }
   };
 
@@ -232,8 +236,7 @@ const KYC = () => {
               <KYCDocumentUpload
                 documentType="aadhar_front"
                 label="Aadhar Card (Front)"
-                initialUrl={documents.aadharFront?.s3Url}
-                onUpload={(url) => handleKYCUpload("aadharFront", url)}
+                onFileSelect={(file) => handleFileSelect("aadharFront", file)}
                 onDelete={() => handleKYCDelete("aadharFront")}
                 loading={uploading}
               />
@@ -244,8 +247,7 @@ const KYC = () => {
               <KYCDocumentUpload
                 documentType="aadhar_back"
                 label="Aadhar Card (Back)"
-                initialUrl={documents.aadharBack?.s3Url}
-                onUpload={(url) => handleKYCUpload("aadharBack", url)}
+                onFileSelect={(file) => handleFileSelect("aadharBack", file)}
                 onDelete={() => handleKYCDelete("aadharBack")}
                 loading={uploading}
               />
@@ -256,8 +258,7 @@ const KYC = () => {
               <KYCDocumentUpload
                 documentType="pan"
                 label="PAN Card"
-                initialUrl={documents.panCard?.s3Url}
-                onUpload={(url) => handleKYCUpload("panCard", url)}
+                onFileSelect={(file) => handleFileSelect("panCard", file)}
                 onDelete={() => handleKYCDelete("panCard")}
                 loading={uploading}
               />
@@ -276,7 +277,11 @@ const KYC = () => {
                 }
                 sx={{ py: 1.5 }}
               >
-                {loading ? "Submitting..." : "Submit for Verification"}
+                {uploading
+                  ? "Uploading documents..."
+                  : loading
+                  ? "Submitting..."
+                  : "Submit for Verification"}
               </Button>
             </Grid>
           </Grid>

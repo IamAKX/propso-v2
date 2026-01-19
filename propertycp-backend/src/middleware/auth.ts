@@ -1,7 +1,5 @@
 import { Context, Next } from 'hono';
-import jwt from 'jsonwebtoken';
-
-const JWT_SECRET = process.env.JWT_SECRET || 'propertycp-secret-key-2024';
+import db from '../db/database';
 
 export interface AuthUser {
   id: number;
@@ -11,26 +9,38 @@ export interface AuthUser {
 
 export const authMiddleware = async (c: Context, next: Next) => {
   try {
-    const authHeader = c.req.header('Authorization');
+    // Get userId from header
+    const userId = c.req.header('X-User-Id');
 
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    if (!userId) {
       return c.json({
         success: false,
-        message: 'Authorization token required',
+        message: 'User ID required',
       }, 401);
     }
 
-    const token = authHeader.substring(7);
-    const decoded = jwt.verify(token, JWT_SECRET) as AuthUser;
+    // Fetch user from database to get full user info
+    const user = db.prepare('SELECT id, email, user_type FROM users WHERE id = ?').get(userId) as any;
+
+    if (!user) {
+      return c.json({
+        success: false,
+        message: 'User not found',
+      }, 401);
+    }
 
     // Attach user to context
-    c.set('user', decoded);
+    c.set('user', {
+      id: user.id,
+      email: user.email,
+      userType: user.user_type,
+    });
 
     await next();
   } catch (error) {
     return c.json({
       success: false,
-      message: 'Invalid or expired token',
+      message: 'Authentication failed',
     }, 401);
   }
 };
@@ -46,8 +56,4 @@ export const adminMiddleware = async (c: Context, next: Next) => {
   }
 
   await next();
-};
-
-export const generateToken = (user: AuthUser): string => {
-  return jwt.sign(user, JWT_SECRET, { expiresIn: '7d' });
 };

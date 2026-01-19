@@ -1,11 +1,11 @@
 import { Hono } from 'hono';
 import db, { toCamelCase, toSnakeCase } from '../db/database';
-import { authMiddleware, adminMiddleware, AuthUser } from '../middleware/auth';
+import { authMiddleware, AuthUser } from '../middleware/auth';
 
 const leads = new Hono();
 
 // Get all leads (Admin only)
-leads.get('/', authMiddleware, adminMiddleware, async (c) => {
+leads.get('/', async (c) => {
   try {
     const allLeads = db.prepare(`
       SELECT l.*, u.full_name as created_by_name, u.email as created_by_email
@@ -80,7 +80,7 @@ leads.get('/user/:userId', authMiddleware, async (c) => {
 });
 
 // Get lead by ID
-leads.get('/:id', authMiddleware, async (c) => {
+leads.get('/:id', async (c) => {
   try {
     const id = c.req.param('id');
     const lead = db.prepare('SELECT * FROM leads WHERE id = ?').get(id);

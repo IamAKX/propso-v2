@@ -2,13 +2,27 @@ import axios from "axios";
 
 const API_URL = process.env.REACT_APP_API_URL || "http://localhost:3001/api";
 
+// Create axios instance with interceptor to add userId
+const axiosInstance = axios.create({
+  baseURL: API_URL,
+});
+
+// Add userId to requests if available
+axiosInstance.interceptors.request.use((config) => {
+  const userId = localStorage.getItem("userId");
+  if (userId) {
+    config.headers["X-User-Id"] = userId;
+  }
+  return config;
+});
+
 /**
  * Upload property images and videos to S3
  * @param {number} propertyId - Property ID
  * @param {File[]} files - Array of files to upload
  * @returns {Promise<Object>} Upload response data
  */
-export const uploadPropertyFiles = async (propertyId, files, token) => {
+export const uploadPropertyFiles = async (propertyId, files) => {
   try {
     const formData = new FormData();
 
@@ -17,13 +31,12 @@ export const uploadPropertyFiles = async (propertyId, files, token) => {
       formData.append(`file-${index}`, file);
     });
 
-    const response = await axios.post(
-      `${API_URL}/uploads/property/${propertyId}`,
+    const response = await axiosInstance.post(
+      `/uploads/property/${propertyId}`,
       formData,
       {
         headers: {
           "Content-Type": "multipart/form-data",
-          Authorization: `Bearer ${token}`,
         },
       }
     );
@@ -41,15 +54,10 @@ export const uploadPropertyFiles = async (propertyId, files, token) => {
  * @param {number} fileId - File ID to delete
  * @returns {Promise<Object>} Delete response data
  */
-export const deletePropertyFile = async (propertyId, fileId, token) => {
+export const deletePropertyFile = async (propertyId, fileId) => {
   try {
-    const response = await axios.delete(
-      `${API_URL}/uploads/property/${propertyId}/${fileId}`,
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      }
+    const response = await axiosInstance.delete(
+      `/uploads/property/${propertyId}/${fileId}`
     );
 
     return response.data;
@@ -65,18 +73,17 @@ export const deletePropertyFile = async (propertyId, fileId, token) => {
  * @param {File} file - File to upload
  * @returns {Promise<Object>} Upload response data
  */
-export const uploadKYCDocument = async (documentType, file, token) => {
+export const uploadKYCDocument = async (documentType, file) => {
   try {
     const formData = new FormData();
     formData.append("file", file);
 
-    const response = await axios.post(
-      `${API_URL}/uploads/kyc/${documentType}`,
+    const response = await axiosInstance.post(
+      `/uploads/kyc/${documentType}`,
       formData,
       {
         headers: {
           "Content-Type": "multipart/form-data",
-          Authorization: `Bearer ${token}`,
         },
       }
     );
@@ -95,15 +102,10 @@ export const uploadKYCDocument = async (documentType, file, token) => {
  * @param {string} documentType - 'aadhar_front', 'aadhar_back', or 'pan'
  * @returns {Promise<Object>} Delete response data
  */
-export const deleteKYCDocument = async (documentType, token) => {
+export const deleteKYCDocument = async (documentType) => {
   try {
-    const response = await axios.delete(
-      `${API_URL}/uploads/kyc/${documentType}`,
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      }
+    const response = await axiosInstance.delete(
+      `/uploads/kyc/${documentType}`
     );
 
     return response.data;

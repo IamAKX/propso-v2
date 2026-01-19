@@ -10,11 +10,11 @@ const axiosInstance = axios.create({
   },
 });
 
-// Add token to requests if available
+// Add userId to requests if available
 axiosInstance.interceptors.request.use((config) => {
-  const token = localStorage.getItem('token');
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
+  const userId = localStorage.getItem('userId');
+  if (userId) {
+    config.headers['X-User-Id'] = userId;
   }
   return config;
 });
@@ -24,8 +24,8 @@ axiosInstance.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      // Token expired or invalid
-      localStorage.removeItem('token');
+      // Unauthorized - clear session
+      localStorage.removeItem('userId');
       localStorage.removeItem('user');
       window.location.href = '/login';
     }
@@ -38,9 +38,10 @@ const api = {
   login: async (email, password) => {
     try {
       const response = await axiosInstance.post('/auth/login', { email, password });
-      if (response.data.success && response.data.data.token) {
-        localStorage.setItem('token', response.data.data.token);
-        localStorage.setItem('user', JSON.stringify(response.data.data.user));
+      if (response.data.success && response.data.data.user) {
+        const user = response.data.data.user;
+        localStorage.setItem('userId', user.id.toString());
+        localStorage.setItem('user', JSON.stringify(user));
       }
       return response.data;
     } catch (error) {
@@ -51,9 +52,10 @@ const api = {
   register: async (userData) => {
     try {
       const response = await axiosInstance.post('/auth/register', userData);
-      if (response.data.success && response.data.data.token) {
-        localStorage.setItem('token', response.data.data.token);
-        localStorage.setItem('user', JSON.stringify(response.data.data.user));
+      if (response.data.success && response.data.data.user) {
+        const user = response.data.data.user;
+        localStorage.setItem('userId', user.id.toString());
+        localStorage.setItem('user', JSON.stringify(user));
       }
       return response.data;
     } catch (error) {

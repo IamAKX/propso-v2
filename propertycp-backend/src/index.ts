@@ -39,7 +39,7 @@ app.use('*', async (c, next) => {
     // When allowing credentials, we must echo the request origin (cannot use '*')
     c.header('Access-Control-Allow-Origin', allowAll ? (origin || '*') : origin);
     c.header('Access-Control-Allow-Credentials', 'true');
-    c.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    c.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-User-Id');
     c.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
 
     // Handle preflight

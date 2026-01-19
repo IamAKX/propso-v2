@@ -1,7 +1,6 @@
 import { Hono } from 'hono';
 import bcrypt from 'bcrypt';
 import db, { toCamelCase, toSnakeCase } from '../db/database';
-import { generateToken } from '../middleware/auth';
 
 const auth = new Hono();
 
@@ -36,13 +35,6 @@ auth.post('/login', async (c) => {
       }, 401);
     }
 
-    // Generate token
-    const token = generateToken({
-      id: userData.id,
-      email: userData.email,
-      userType: userData.userType,
-    });
-
     // Remove password from response
     delete userData.password;
 
@@ -51,7 +43,6 @@ auth.post('/login', async (c) => {
       message: 'Login successful',
       data: {
         user: userData,
-        token,
       },
     });
   } catch (error: any) {
@@ -110,13 +101,6 @@ auth.post('/register', async (c) => {
     const newUser = db.prepare('SELECT * FROM users WHERE id = ?').get(result.lastInsertRowid);
     const newUserData = toCamelCase(newUser);
 
-    // Generate token
-    const token = generateToken({
-      id: newUserData.id,
-      email: newUserData.email,
-      userType: newUserData.userType,
-    });
-
     // Remove password from response
     delete newUserData.password;
 
@@ -125,7 +109,6 @@ auth.post('/register', async (c) => {
       message: 'Registration successful',
       data: {
         user: newUserData,
-        token,
       },
     }, 201);
   } catch (error: any) {

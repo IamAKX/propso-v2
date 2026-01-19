@@ -28,7 +28,7 @@ const KYCDocumentUpload = ({
   documentType, // 'aadhar_front', 'aadhar_back', 'pan'
   label,
   initialUrl = null,
-  onUpload,
+  onFileSelect,
   onDelete,
   loading = false,
   error = null,
@@ -37,6 +37,7 @@ const KYCDocumentUpload = ({
   const [fileName, setFileName] = useState("");
   const [dragActive, setDragActive] = useState(false);
   const [previewOpen, setPreviewOpen] = useState(false);
+  const [validationError, setValidationError] = useState(null);
 
   const handleDrag = (e) => {
     e.preventDefault();
@@ -69,14 +70,14 @@ const KYCDocumentUpload = ({
   const processFile = async (file) => {
     // Validate file type
     if (!file.type.startsWith("image/")) {
-      alert("Only image files are allowed");
+      setValidationError("Only image files are allowed");
       return;
     }
 
     // Validate file size (10MB max)
     const maxSize = 10 * 1024 * 1024;
     if (file.size > maxSize) {
-      alert("File size must be less than 10MB");
+      setValidationError("File size must be less than 10MB");
       return;
     }
 
@@ -85,9 +86,10 @@ const KYCDocumentUpload = ({
     reader.onload = (e) => {
       setPreview(e.target.result);
       setFileName(file.name);
+      setValidationError(null);
 
-      // Call upload handler
-      onUpload(file);
+      // Pass file to parent component for later upload
+      onFileSelect(file);
     };
     reader.readAsDataURL(file);
   };
@@ -102,9 +104,9 @@ const KYCDocumentUpload = ({
 
   return (
     <Box>
-      {error && (
-        <Alert severity="error" mb={2}>
-          {error}
+      {(error || validationError) && (
+        <Alert severity="error" sx={{ mb: 2 }}>
+          {error || validationError}
         </Alert>
       )}
 
