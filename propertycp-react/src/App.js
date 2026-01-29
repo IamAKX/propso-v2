@@ -25,6 +25,7 @@ import EditPropertyImage from './screens/EditPropertyImage';
 import EditPropertyVideo from './screens/EditPropertyVideo';
 import AllLeadUsers from './screens/AllLeadUsers';
 import AdminLeadList from './screens/AdminLeadList';
+import PropertyApprovalList from './screens/PropertyApprovalList';
 
 // Protected Route Component
 const ProtectedRoute = ({ children }) => {
@@ -74,6 +75,7 @@ function AppRoutes() {
       <Route path="/edit-property-video/:id" element={<ProtectedRoute><EditPropertyVideo /></ProtectedRoute>} />
       <Route path="/all-lead-users" element={<ProtectedRoute><AllLeadUsers /></ProtectedRoute>} />
       <Route path="/admin-lead-list/:userId" element={<ProtectedRoute><AdminLeadList /></ProtectedRoute>} />
+      <Route path="/property-approvals" element={<ProtectedRoute><PropertyApprovalList /></ProtectedRoute>} />
 
       {/* Fallback */}
       <Route path="*" element={<Navigate to="/" />} />

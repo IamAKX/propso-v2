@@ -36,8 +36,8 @@ export const seedDatabase = () => {
 
   // Insert properties
   const insertProperty = db.prepare(`
-    INSERT INTO properties (title, sub_title, price, number_of_rooms, bhk, location, city, main_image, images, type, area, area_unit, description, builder_phone_number)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    INSERT INTO properties (title, sub_title, price, number_of_rooms, bhk, location, city, main_image, images, type, area, area_unit, description, builder_phone_number, approved, created_by_id)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `);
 
   const properties = [
@@ -61,6 +61,8 @@ export const seedDatabase = () => {
       'Sqft',
       'Beautiful luxury apartment with modern amenities, spacious rooms, and excellent ventilation. Located in the heart of the city with easy access to schools, hospitals, and shopping centers.',
       '9876543210',
+      'Approved', // approved status
+      1, // created_by_id
     ],
     [
       'Modern 2BHK Flat',
@@ -81,6 +83,8 @@ export const seedDatabase = () => {
       'Sqft',
       'Newly constructed modern flat with premium fittings. Close to IT parks and metro station. Perfect for working professionals.',
       '9876543211',
+      'Approved',
+      1,
     ],
     [
       'Spacious 4BHK Villa',
@@ -102,6 +106,8 @@ export const seedDatabase = () => {
       'Sqft',
       'Luxurious independent villa with large garden, parking for 3 cars, and premium interiors. Gated community with 24/7 security.',
       '9876543212',
+      'Approved',
+      1,
     ],
     [
       'Commercial Office Space',
@@ -121,6 +127,8 @@ export const seedDatabase = () => {
       'Sqft',
       'Ready to move commercial space with modern facilities. Ideal for startups and small businesses. High-speed internet and power backup included.',
       '9876543213',
+      'Approved',
+      1,
     ],
     [
       'Studio Apartment',
@@ -140,6 +148,8 @@ export const seedDatabase = () => {
       'Sqft',
       'Cozy studio apartment with modern amenities. Perfect for young professionals. Walking distance to cafes and restaurants.',
       '9876543214',
+      'Approved',
+      2,
     ],
     [
       'Penthouse Suite',
@@ -160,6 +170,8 @@ export const seedDatabase = () => {
       'Sqft',
       'Ultra-luxury penthouse with panoramic city views, private terrace, jacuzzi, and premium Italian marble flooring.',
       '9876543215',
+      'Approved',
+      2,
     ],
     [
       'Plot for Sale',
@@ -179,6 +191,8 @@ export const seedDatabase = () => {
       'Sqft',
       'Prime residential plot in developing area. Clear title, HMDA approved. Excellent investment opportunity with good appreciation potential.',
       '9876543216',
+      'Approved',
+      2,
     ],
     [
       'Rental Apartment',
@@ -198,6 +212,8 @@ export const seedDatabase = () => {
       'Sqft',
       'Beautifully furnished 2BHK apartment available for rent. Sea-facing, modern amenities, gym, and swimming pool. Monthly rent.',
       '9876543217',
+      'Approved',
+      2,
     ],
     [
       'Commercial Showroom',
@@ -217,6 +233,8 @@ export const seedDatabase = () => {
       'Sqft',
       'Premium showroom space on main road. High footfall area, perfect for retail business. Ample parking space available.',
       '9876543218',
+      'Approved',
+      1,
     ],
     [
       'Farmland',
@@ -236,6 +254,8 @@ export const seedDatabase = () => {
       'Acres',
       'Fertile agricultural land with borewells and electricity connection. Suitable for organic farming. Peaceful location away from city.',
       '9876543219',
+      'Approved',
+      1,
     ],
     [
       '3BHK Apartment',
@@ -255,6 +275,8 @@ export const seedDatabase = () => {
       'Sqft',
       'Spacious 3BHK with balconies in all rooms. Well-connected to metro, schools, and hospitals. Society with all modern amenities.',
       '9876543220',
+      'Approved',
+      1,
     ],
     [
       'Residential Plot',
@@ -273,6 +295,8 @@ export const seedDatabase = () => {
       'Sqft',
       'DTCP approved residential plot in gated community. All basic amenities available. Near IT corridor.',
       '9876543221',
+      'Approved',
+      1,
     ],
     [
       'Luxury Penthouse',
@@ -292,6 +316,8 @@ export const seedDatabase = () => {
       'Sqft',
       'Ultra-luxury penthouse with private swimming pool, home theater, and panoramic city views. Premium Italian marble flooring throughout.',
       '9876543222',
+      'Approved',
+      2,
     ],
     [
       'Commercial Complex',
@@ -311,6 +337,8 @@ export const seedDatabase = () => {
       'Sqft',
       'Premium shopping complex with multiple floors. High footfall area, excellent investment opportunity. Food court and entertainment zone included.',
       '9876543223',
+      'Approved',
+      2,
     ],
     [
       'Budget Rental Home',
@@ -329,6 +357,8 @@ export const seedDatabase = () => {
       'Sqft',
       'Affordable 1BHK apartment for rent. Fully furnished with bed, wardrobe, and kitchen appliances. Monthly rental, 2 months deposit.',
       '9876543224',
+      'Approved',
+      2,
     ],
     [
       'IT Park Office Space',
@@ -348,6 +378,8 @@ export const seedDatabase = () => {
       'Sqft',
       'Grade A commercial office space in IT corridor. Central AC, high-speed elevators, 24/7 security, and power backup. Perfect for tech companies.',
       '9876543225',
+      'Pending',
+      1,
     ],
     [
       'Farmhouse Plot',
@@ -367,6 +399,8 @@ export const seedDatabase = () => {
       'Acres',
       'Beautiful farmland with mature mango trees, natural water source, and electricity. Perfect weekend getaway spot with potential for organic farming.',
       '9876543226',
+      'Pending',
+      1,
     ],
     [
       'Beach View Apartment',
@@ -386,6 +420,8 @@ export const seedDatabase = () => {
       'Sqft',
       'Premium 2BHK rental apartment with stunning sea view. Fully furnished with modern amenities, gym, and swimming pool. Available immediately.',
       '9876543227',
+      'Pending',
+      2,
     ],
     [
       'Investment Plot',
@@ -404,6 +440,8 @@ export const seedDatabase = () => {
       'Sqft',
       'HMDA approved plot near airport. Excellent investment opportunity with high appreciation potential. Clear title, ready for construction.',
       '9876543228',
+      'Pending',
+      2,
     ],
     [
       'Heritage Villa',
@@ -423,6 +461,8 @@ export const seedDatabase = () => {
       'Sqft',
       'Beautiful colonial style heritage villa with vintage architecture. Large garden, antique interiors, and modern amenities. Prime location.',
       '9876543229',
+      'Pending',
+      2,
     ],
     [
       'Warehouse Space',
@@ -441,6 +481,8 @@ export const seedDatabase = () => {
       'Sqft',
       'Large warehouse with loading dock facilities. 24/7 security, CCTV surveillance, and ample parking. Ideal for logistics and distribution.',
       '9876543230',
+      'Pending',
+      1,
     ],
     [
       'Organic Farmland',
@@ -460,6 +502,8 @@ export const seedDatabase = () => {
       'Acres',
       'Certified organic coconut plantation with regular yield. Drip irrigation, farm house, and caretaker quarters. Near ECR beach.',
       '9876543231',
+      'Pending',
+      1,
     ],
     [
       'Student Housing',
@@ -478,6 +522,8 @@ export const seedDatabase = () => {
       'Sqft',
       'PG accommodation for students and working professionals. Fully furnished rooms, meals included, WiFi, laundry, and housekeeping services.',
       '9876543232',
+      'Pending',
+      2,
     ],
     [
       'Gated Community Plot',
@@ -496,6 +542,8 @@ export const seedDatabase = () => {
       'Sqft',
       'Premium villa plot in gated community with clubhouse, swimming pool, and 24/7 security. Near IT parks and international schools.',
       '9876543233',
+      'Approved',
+      1,
     ],
     [
       'Retail Shop',
@@ -514,6 +562,8 @@ export const seedDatabase = () => {
       'Sqft',
       'Prime retail shop on ground floor corner. High visibility location with heavy footfall. Perfect for boutique, café, or showroom.',
       '9876543234',
+      'Approved',
+      2,
     ],
   ];
 

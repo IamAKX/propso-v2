@@ -119,6 +119,19 @@ const api = {
     }
   },
 
+  getAllPropertiesForAdmin: async (city = null, propertyType = null) => {
+    try {
+      const params = {};
+      if (city) params.city = city;
+      if (propertyType) params.propertyType = propertyType;
+
+      const response = await axiosInstance.get('/properties/admin/all', { params });
+      return response.data;
+    } catch (error) {
+      throw new Error(error.response?.data?.message || 'Failed to fetch properties');
+    }
+  },
+
   getPropertyById: async (id) => {
     try {
       const response = await axiosInstance.get(`/properties/${id}`);
@@ -168,6 +181,24 @@ const api = {
       return response.data;
     } catch (error) {
       throw new Error(error.response?.data?.message || 'Failed to delete property');
+    }
+  },
+
+  approveProperty: async (id) => {
+    try {
+      const response = await axiosInstance.post(`/properties/${id}/approve`);
+      return response.data;
+    } catch (error) {
+      throw new Error(error.response?.data?.message || 'Failed to approve property');
+    }
+  },
+
+  rejectProperty: async (id) => {
+    try {
+      const response = await axiosInstance.post(`/properties/${id}/reject`);
+      return response.data;
+    } catch (error) {
+      throw new Error(error.response?.data?.message || 'Failed to reject property');
     }
   },
 

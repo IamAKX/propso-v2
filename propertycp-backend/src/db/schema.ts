@@ -36,6 +36,7 @@ CREATE TABLE IF NOT EXISTS properties (
   area_unit TEXT,
   description TEXT,
   builder_phone_number TEXT,
+  approved TEXT DEFAULT 'Pending' CHECK(approved IN ('Pending', 'Approved', 'Rejected')),
   created_by_id INTEGER,
   created_date TEXT DEFAULT (datetime('now')),
   updated_date TEXT DEFAULT (datetime('now')),
@@ -74,6 +75,7 @@ CREATE TABLE IF NOT EXISTS favorites (
 CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
 CREATE INDEX IF NOT EXISTS idx_properties_city ON properties(city);
 CREATE INDEX IF NOT EXISTS idx_properties_type ON properties(type);
+CREATE INDEX IF NOT EXISTS idx_properties_approved ON properties(approved);
 CREATE INDEX IF NOT EXISTS idx_leads_created_by ON leads(created_by_id);
 CREATE INDEX IF NOT EXISTS idx_leads_property ON leads(property_id);
 CREATE INDEX IF NOT EXISTS idx_favorites_user ON favorites(user_id);

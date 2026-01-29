@@ -9,12 +9,15 @@ favorites.get('/', authMiddleware, async (c) => {
   try {
     const currentUser = c.get('user') as AuthUser;
 
-    const userFavorites = db.prepare(`
+    // Build query - all users (including admins) can only see approved properties
+    const query = `
       SELECT p.* FROM properties p
       INNER JOIN favorites f ON p.id = f.property_id
-      WHERE f.user_id = ?
+      WHERE f.user_id = ? AND p.approved = 'Approved'
       ORDER BY f.created_date DESC
-    `).all(currentUser.id);
+    `;
+
+    const userFavorites = db.prepare(query).all(currentUser.id);
 
     const favoritesData = toCamelCase(userFavorites);
 

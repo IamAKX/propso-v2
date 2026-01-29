@@ -18,10 +18,19 @@ const db = new Database(DATABASE_PATH, { create: true });
 db.run('PRAGMA journal_mode = WAL');
 
 // Initialize tables
-export const initDatabase = () => {
+export const initDatabase = async () => {
   console.log('Initializing database...');
   db.run(createTables);
   console.log('Database initialized successfully!');
+
+  // Run migrations
+  try {
+    const { runMigrations } = await import('./migrate');
+    await runMigrations();
+  } catch (error) {
+    console.error('Error running migrations:', error);
+    // Don't throw - migrations are optional on first init
+  }
 };
 
 // Helper to convert snake_case to camelCase

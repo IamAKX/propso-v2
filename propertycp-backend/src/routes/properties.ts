@@ -1,9 +1,60 @@
 import { Hono } from 'hono';
 import db, { toCamelCase, toSnakeCase } from '../db/database';
-import { authMiddleware, AuthUser } from '../middleware/auth';
+import { authMiddleware, AuthUser, adminMiddleware } from '../middleware/auth';
 import { CITIES, PROPERTY_TYPES } from '../constants';
+import { deleteFromS3, extractS3KeyFromUrl } from '../services/s3';
 
 const properties = new Hono();
+
+// Get all properties for admin (including pending/rejected)
+properties.get('/admin/all', authMiddleware, adminMiddleware, async (c) => {
+  try {
+    const city = c.req.query('city');
+    const propertyType = c.req.query('propertyType');
+
+    let query = 'SELECT * FROM properties';
+    const conditions: string[] = [];
+    const params: any[] = [];
+
+    if (city) {
+      conditions.push('city = ?');
+      params.push(city);
+    }
+
+    if (propertyType) {
+      conditions.push('type = ?');
+      params.push(propertyType);
+    }
+
+    if (conditions.length > 0) {
+      query += ' WHERE ' + conditions.join(' AND ');
+    }
+
+    query += ' ORDER BY created_date DESC';
+
+    const allProperties = db.prepare(query).all(...params);
+    const propertiesData = toCamelCase(allProperties);
+
+    // Parse images JSON
+    propertiesData.forEach((property: any) => {
+      if (property.images) {
+        property.images = JSON.parse(property.images);
+      }
+    });
+
+    return c.json({
+      success: true,
+      message: 'Properties fetched successfully',
+      data: propertiesData,
+    });
+  } catch (error: any) {
+    console.error('Get admin properties error:', error);
+    return c.json({
+      success: false,
+      message: error.message || 'Failed to fetch properties',
+    }, 500);
+  }
+});
 
 // Get all properties with optional filters
 properties.get('/', async (c) => {
@@ -14,6 +65,10 @@ properties.get('/', async (c) => {
     let query = 'SELECT * FROM properties';
     const conditions: string[] = [];
     const params: any[] = [];
+
+    // All users (including admins) can only see approved properties on home page
+    conditions.push('approved = ?');
+    params.push('Approved');
 
     if (city) {
       conditions.push('city = ?');
@@ -59,9 +114,18 @@ properties.get('/', async (c) => {
 properties.get('/:id', async (c) => {
   try {
     const id = c.req.param('id');
-    const property = db.prepare('SELECT * FROM properties WHERE id = ?').get(id);
+
+    const property = db.prepare('SELECT * FROM properties WHERE id = ?').get(id) as any;
 
     if (!property) {
+      return c.json({
+        success: false,
+        message: 'Property not found',
+      }, 404);
+    }
+
+    // All users (including admins) can only view approved properties
+    if (property.approved !== 'Approved') {
       return c.json({
         success: false,
         message: 'Property not found',
@@ -103,7 +167,10 @@ properties.post('/get-multiple', async (c) => {
 
     // Create placeholders for prepared statement
     const placeholders = ids.map(() => '?').join(', ');
-    const query = `SELECT * FROM properties WHERE id IN (${placeholders})`;
+    let query = `SELECT * FROM properties WHERE id IN (${placeholders})`;
+
+    // All users (including admins) can only see approved properties
+    query += ` AND approved = 'Approved'`;
 
     const properties = db.prepare(query).all(...ids);
     const propertiesData = toCamelCase(properties);
@@ -158,8 +225,8 @@ properties.post('/', authMiddleware, async (c) => {
       INSERT INTO properties (
         title, sub_title, price, number_of_rooms, bhk, location, city,
         main_image, images, type, area, area_unit, description,
-        builder_phone_number, created_by_id
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        builder_phone_number, approved, created_by_id
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
 
     const result = insertProperty.run(
@@ -177,6 +244,7 @@ properties.post('/', authMiddleware, async (c) => {
       propertyData.areaUnit || null,
       propertyData.description || null,
       propertyData.builderPhoneNumber || null,
+      'Pending', // Set approved status to Pending
       currentUser.id
     );
 
@@ -327,6 +395,117 @@ properties.delete('/:id', authMiddleware, async (c) => {
     return c.json({
       success: false,
       message: error.message || 'Failed to delete property',
+    }, 500);
+  }
+});
+
+// Approve property (Admin only)
+properties.post('/:id/approve', authMiddleware, adminMiddleware, async (c) => {
+  try {
+    const id = c.req.param('id');
+
+    // Check if property exists
+    const property = db.prepare('SELECT * FROM properties WHERE id = ?').get(id) as any;
+
+    if (!property) {
+      return c.json({
+        success: false,
+        message: 'Property not found',
+      }, 404);
+    }
+
+    // Update property approval status
+    db.prepare(`
+      UPDATE properties
+      SET approved = 'Approved', updated_date = datetime('now')
+      WHERE id = ?
+    `).run(id);
+
+    // Fetch updated property
+    const updatedProperty = db.prepare('SELECT * FROM properties WHERE id = ?').get(id);
+    const propertyData = toCamelCase(updatedProperty);
+
+    // Parse images JSON
+    if (propertyData.images) {
+      propertyData.images = JSON.parse(propertyData.images);
+    }
+
+    return c.json({
+      success: true,
+      message: 'Property approved successfully',
+      data: propertyData,
+    });
+  } catch (error: any) {
+    console.error('Approve property error:', error);
+    return c.json({
+      success: false,
+      message: error.message || 'Failed to approve property',
+    }, 500);
+  }
+});
+
+// Reject property (Admin only) - Deletes property and all S3 images
+properties.post('/:id/reject', authMiddleware, adminMiddleware, async (c) => {
+  try {
+    const id = c.req.param('id');
+
+    // Check if property exists
+    const property = db.prepare('SELECT * FROM properties WHERE id = ?').get(id) as any;
+
+    if (!property) {
+      return c.json({
+        success: false,
+        message: 'Property not found',
+      }, 404);
+    }
+
+    // Delete all S3 images associated with this property
+    const deletePromises: Promise<void>[] = [];
+
+    // Delete main image
+    if (property.main_image) {
+      try {
+        const mainImageKey = extractS3KeyFromUrl(property.main_image);
+        deletePromises.push(deleteFromS3(mainImageKey));
+      } catch (error) {
+        console.error('Error deleting main image:', error);
+      }
+    }
+
+    // Delete all other images
+    if (property.images) {
+      try {
+        const imagesArray = JSON.parse(property.images);
+        imagesArray.forEach((image: any) => {
+          if (image.link) {
+            try {
+              const imageKey = extractS3KeyFromUrl(image.link);
+              deletePromises.push(deleteFromS3(imageKey));
+            } catch (error) {
+              console.error(`Error deleting image ${image.id}:`, error);
+            }
+          }
+        });
+      } catch (error) {
+        console.error('Error parsing images JSON:', error);
+      }
+    }
+
+    // Wait for all S3 deletions to complete (with error handling)
+    await Promise.allSettled(deletePromises);
+
+    // Delete property from database
+    db.prepare('DELETE FROM properties WHERE id = ?').run(id);
+
+    return c.json({
+      success: true,
+      message: 'Property rejected and deleted successfully',
+    });
+  } catch (error: any) {
+    console.error('Reject property error:', error);
+    return c.json({
+      success: false,
+      message: error.message || 'Failed to reject property',
     }, 500);
   }
 });

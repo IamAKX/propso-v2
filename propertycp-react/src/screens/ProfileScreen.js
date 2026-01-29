@@ -31,6 +31,7 @@ import {
   People,
   AdminPanelSettings,
   CardMembership,
+  CheckCircle,
 } from '@mui/icons-material';
 import { useAuth } from '../context/AuthContext';
 
@@ -320,6 +321,25 @@ const ProfileScreen = () => {
                   <ListItemText
                     primary={<Typography variant="body2" fontWeight="600">All Leads</Typography>}
                     secondary={<Typography variant="caption">View leads from all users</Typography>}
+                  />
+                </ListItemButton>
+                <ListItemButton
+                  onClick={() => navigate('/property-approvals')}
+                  sx={{
+                    borderRadius: 1,
+                    border: '1px solid',
+                    borderColor: 'divider',
+                    '&:hover': {
+                      bgcolor: 'action.hover',
+                    },
+                  }}
+                >
+                  <ListItemIcon>
+                    <CheckCircle sx={{ color: 'primary.main' }} />
+                  </ListItemIcon>
+                  <ListItemText
+                    primary={<Typography variant="body2" fontWeight="600">Property Approvals</Typography>}
+                    secondary={<Typography variant="caption">Review and approve property listings</Typography>}
                   />
                 </ListItemButton>
               </Box>
