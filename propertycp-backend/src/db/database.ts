@@ -20,10 +20,30 @@ db.run('PRAGMA journal_mode = WAL');
 // Initialize tables
 export const initDatabase = async () => {
   console.log('Initializing database...');
-  db.run(createTables);
-  console.log('Database initialized successfully!');
 
-  // Run migrations
+  // Split the createTables SQL into individual statements
+  const statements = createTables
+    .split(';')
+    .map(s => s.trim())
+    .filter(s => s.length > 0);
+
+  // Execute table creation statements first (skip index creation for now)
+  for (const statement of statements) {
+    if (!statement.toUpperCase().includes('CREATE INDEX')) {
+      try {
+        db.run(statement);
+      } catch (error: any) {
+        // Ignore errors for existing tables
+        if (!error.message?.includes('already exists')) {
+          console.error('Error creating table:', error);
+        }
+      }
+    }
+  }
+
+  console.log('Database tables initialized!');
+
+  // Run migrations to add new columns
   try {
     const { runMigrations } = await import('./migrate');
     await runMigrations();
@@ -31,6 +51,22 @@ export const initDatabase = async () => {
     console.error('Error running migrations:', error);
     // Don't throw - migrations are optional on first init
   }
+
+  // Now create indexes after migrations have run
+  for (const statement of statements) {
+    if (statement.toUpperCase().includes('CREATE INDEX')) {
+      try {
+        db.run(statement);
+      } catch (error: any) {
+        // Ignore errors for existing indexes
+        if (!error.message?.includes('already exists')) {
+          console.error('Error creating index:', error);
+        }
+      }
+    }
+  }
+
+  console.log('Database initialized successfully!');
 };
 
 // Helper to convert snake_case to camelCase
