@@ -14,11 +14,13 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
+  Chip,
 } from "@mui/material";
 import {
   CloudUpload,
   Delete as DeleteIcon,
   Close as CloseIcon,
+  Verified as VerifiedIcon,
 } from "@mui/icons-material";
 
 /**
@@ -32,6 +34,7 @@ const KYCDocumentUpload = ({
   onDelete,
   loading = false,
   error = null,
+  disabled = false,
 }) => {
   const [preview, setPreview] = useState(initialUrl);
   const [fileName, setFileName] = useState("");
@@ -115,7 +118,17 @@ const KYCDocumentUpload = ({
         <Card>
           <CardContent>
             <Stack spacing={2}>
-              <Typography variant="subtitle1">{label}</Typography>
+              <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <Typography variant="subtitle1">{label}</Typography>
+                {disabled && (
+                  <Chip
+                    icon={<VerifiedIcon />}
+                    label="Verified"
+                    color="success"
+                    size="small"
+                  />
+                )}
+              </Box>
 
               <Box
                 onClick={() => setPreviewOpen(true)}
@@ -139,21 +152,25 @@ const KYCDocumentUpload = ({
                 />
               </Box>
 
-              <Typography variant="body2" color="textSecondary">
-                {fileName}
-              </Typography>
+              {fileName && (
+                <Typography variant="body2" color="textSecondary">
+                  {fileName}
+                </Typography>
+              )}
 
               <Stack direction="row" spacing={1}>
-                <Button
-                  variant="outlined"
-                  color="error"
-                  startIcon={<DeleteIcon />}
-                  onClick={handleDelete}
-                  disabled={loading}
-                  fullWidth
-                >
-                  Delete
-                </Button>
+                {!disabled && (
+                  <Button
+                    variant="outlined"
+                    color="error"
+                    startIcon={<DeleteIcon />}
+                    onClick={handleDelete}
+                    disabled={loading}
+                    fullWidth
+                  >
+                    Delete
+                  </Button>
+                )}
                 <Button
                   variant="text"
                   onClick={() => setPreviewOpen(true)}
@@ -166,50 +183,52 @@ const KYCDocumentUpload = ({
           </CardContent>
         </Card>
       ) : (
-        // Show upload area
-        <Paper
-          onDragEnter={handleDrag}
-          onDragLeave={handleDrag}
-          onDragOver={handleDrag}
-          onDrop={handleDrop}
-          sx={{
-            p: 3,
-            textAlign: "center",
-            border: "2px dashed",
-            borderColor: dragActive ? "primary.main" : "grey.300",
-            backgroundColor: dragActive ? "action.hover" : "background.paper",
-            transition: "all 0.3s ease",
-            cursor: "pointer",
-          }}
-        >
-          <input
-            type="file"
-            accept="image/*"
-            onChange={handleFileInput}
-            style={{ display: "none" }}
-            id={`kyc-upload-${documentType}`}
-            disabled={loading}
-          />
-          <label
-            htmlFor={`kyc-upload-${documentType}`}
-            style={{ cursor: "pointer", display: "block" }}
+        // Show upload area (only if not disabled)
+        !disabled && (
+          <Paper
+            onDragEnter={handleDrag}
+            onDragLeave={handleDrag}
+            onDragOver={handleDrag}
+            onDrop={handleDrop}
+            sx={{
+              p: 3,
+              textAlign: "center",
+              border: "2px dashed",
+              borderColor: dragActive ? "primary.main" : "grey.300",
+              backgroundColor: dragActive ? "action.hover" : "background.paper",
+              transition: "all 0.3s ease",
+              cursor: "pointer",
+            }}
           >
-            {loading ? (
-              <CircularProgress />
-            ) : (
-              <>
-                <CloudUpload
-                  sx={{ fontSize: 48, color: "primary.main", mb: 1 }}
-                />
-                <Typography variant="h6">{label}</Typography>
-                <Typography variant="body2" color="textSecondary">
-                  Drag and drop your {label.toLowerCase()} here or click to
-                  browse
-                </Typography>
-              </>
-            )}
-          </label>
-        </Paper>
+            <input
+              type="file"
+              accept="image/*"
+              onChange={handleFileInput}
+              style={{ display: "none" }}
+              id={`kyc-upload-${documentType}`}
+              disabled={loading}
+            />
+            <label
+              htmlFor={`kyc-upload-${documentType}`}
+              style={{ cursor: "pointer", display: "block" }}
+            >
+              {loading ? (
+                <CircularProgress />
+              ) : (
+                <>
+                  <CloudUpload
+                    sx={{ fontSize: 48, color: "primary.main", mb: 1 }}
+                  />
+                  <Typography variant="h6">{label}</Typography>
+                  <Typography variant="body2" color="textSecondary">
+                    Drag and drop your {label.toLowerCase()} here or click to
+                    browse
+                  </Typography>
+                </>
+              )}
+            </label>
+          </Paper>
+        )
       )}
 
       {/* Image Preview Dialog */}

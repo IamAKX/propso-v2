@@ -21,6 +21,7 @@ import {
 import { ArrowBack, Favorite, FavoriteBorder, LocationOn, Search } from '@mui/icons-material';
 import { useAuth } from '../context/AuthContext';
 import { useData } from '../context/DataContext';
+import { CITIES, PROPERTY_TYPES } from '../constants';
 
 const PropertyListing = () => {
   const navigate = useNavigate();
@@ -106,11 +107,18 @@ const PropertyListing = () => {
               <Grid item xs={12} sm={5}>
                 <TextField
                   fullWidth
+                  select
                   label="City"
-                  placeholder="Enter city name"
                   value={searchCity}
                   onChange={(e) => setSearchCity(e.target.value)}
-                />
+                >
+                  <MenuItem value="">All Cities</MenuItem>
+                  {CITIES.map((city) => (
+                    <MenuItem key={city} value={city}>
+                      {city}
+                    </MenuItem>
+                  ))}
+                </TextField>
               </Grid>
               <Grid item xs={12} sm={4}>
                 <TextField
@@ -121,8 +129,11 @@ const PropertyListing = () => {
                   onChange={(e) => setPropertyType(e.target.value)}
                 >
                   <MenuItem value="All">All Types</MenuItem>
-                  <MenuItem value="Residential">Residential</MenuItem>
-                  <MenuItem value="Commercial">Commercial</MenuItem>
+                  {PROPERTY_TYPES.map((type) => (
+                    <MenuItem key={type} value={type}>
+                      {type}
+                    </MenuItem>
+                  ))}
                 </TextField>
               </Grid>
               <Grid item xs={12} sm={3}>

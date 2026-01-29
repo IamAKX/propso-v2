@@ -21,11 +21,12 @@ import { useAuth } from "../context/AuthContext";
 import { useData } from "../context/DataContext";
 import MediaUploadManager from "../components/MediaUploadManager";
 import { uploadPropertyFiles } from "../services/s3Upload";
+import { CITIES, PROPERTY_TYPES } from "../constants";
 
 const PostProperty = () => {
   const navigate = useNavigate();
   const { user, isActive } = useAuth();
-  const { createProperty } = useData();
+  const { createProperty, updateProperty } = useData();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
@@ -38,7 +39,7 @@ const PostProperty = () => {
     location: "",
     city: "",
     mainImage: "",
-    type: "Residential",
+    type: "Flat",
     area: "",
     areaUnit: "Sqft",
     description: "",
@@ -126,25 +127,29 @@ const PostProperty = () => {
       // Upload media files if any
       if (mediaFiles.length > 0) {
         try {
-          const uploadedFiles = await uploadPropertyFiles(
+          setUploading(true);
+          const response = await uploadPropertyFiles(
             newProperty.id,
             mediaFiles,
             mainImageId
           );
-          // Update property with uploaded file URLs
-          await createProperty({
-            ...newProperty,
-            images: uploadedFiles,
-            mainImage: mainImageId
-              ? uploadedFiles.find((f) => f.id === mainImageId)?.link
-              : uploadedFiles[0]?.link || newProperty.mainImage,
-          });
+
+          // Update property with uploaded images from response
+          if (response.data?.allImages) {
+            await updateProperty(newProperty.id, {
+              images: response.data.allImages,
+              mainImage: response.data.mainImage,
+            });
+          }
         } catch (uploadErr) {
           console.error(
             "Media upload failed, but property created:",
             uploadErr
           );
+          setError("Property created but image upload failed. You can add images later from edit.");
           // Continue even if media upload fails
+        } finally {
+          setUploading(false);
         }
       }
 
@@ -241,8 +246,11 @@ const PostProperty = () => {
                     value={formData.type}
                     onChange={handleChange}
                   >
-                    <MenuItem value="Residential">Residential</MenuItem>
-                    <MenuItem value="Commercial">Commercial</MenuItem>
+                    {PROPERTY_TYPES.map((type) => (
+                      <MenuItem key={type} value={type}>
+                        {type}
+                      </MenuItem>
+                    ))}
                   </TextField>
                 </Grid>
 
@@ -328,12 +336,18 @@ const PostProperty = () => {
                 <Grid item xs={12} sm={6}>
                   <TextField
                     fullWidth
+                    select
                     label="City *"
                     name="city"
                     value={formData.city}
                     onChange={handleChange}
-                    placeholder="e.g., Bangalore"
-                  />
+                  >
+                    {CITIES.map((city) => (
+                      <MenuItem key={city} value={city}>
+                        {city}
+                      </MenuItem>
+                    ))}
+                  </TextField>
                 </Grid>
 
                 <Grid item xs={12} sm={6}>

@@ -28,10 +28,10 @@ CREATE TABLE IF NOT EXISTS properties (
   number_of_rooms TEXT,
   bhk TEXT,
   location TEXT NOT NULL,
-  city TEXT NOT NULL,
+  city TEXT NOT NULL CHECK(city IN ('Bangalore', 'Hyderabad', 'Mumbai', 'Chennai')),
   main_image TEXT NOT NULL,
   images TEXT, -- JSON array of image objects
-  type TEXT CHECK(type IN ('Residential', 'Commercial')),
+  type TEXT NOT NULL CHECK(type IN ('Rent', 'Plot', 'Flat', 'Commercial', 'Farmland')),
   area TEXT,
   area_unit TEXT,
   description TEXT,
@@ -46,7 +46,7 @@ CREATE TABLE IF NOT EXISTS properties (
 CREATE TABLE IF NOT EXISTS leads (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   lead_property_type TEXT NOT NULL CHECK(lead_property_type IN ('Buy', 'Rent', 'Sell')),
-  property_type TEXT CHECK(property_type IN ('Residential', 'Commercial')),
+  property_type TEXT CHECK(property_type IN ('Rent', 'Plot', 'Flat', 'Commercial', 'Farmland')),
   mobile_no TEXT NOT NULL,
   full_name TEXT NOT NULL,
   status TEXT DEFAULT 'Open' CHECK(status IN ('Open', 'Closed')),

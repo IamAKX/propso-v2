@@ -19,6 +19,7 @@ import {
 import { ArrowBack, Send } from '@mui/icons-material';
 import { useAuth } from '../context/AuthContext';
 import { useData } from '../context/DataContext';
+import { PROPERTY_TYPES } from '../constants';
 
 const CreateLead = () => {
   const navigate = useNavigate();
@@ -34,7 +35,7 @@ const CreateLead = () => {
     fullName: '',
     mobileNo: '',
     leadPropertyType: 'Buy',
-    propertyType: 'Residential',
+    propertyType: 'Flat',
   });
 
   useEffect(() => {
@@ -228,8 +229,11 @@ const CreateLead = () => {
                 margin="normal"
                 disabled={property !== null}
               >
-                <MenuItem value="Residential">Residential</MenuItem>
-                <MenuItem value="Commercial">Commercial</MenuItem>
+                {PROPERTY_TYPES.map((type) => (
+                  <MenuItem key={type} value={type}>
+                    {type}
+                  </MenuItem>
+                ))}
               </TextField>
 
               <Button

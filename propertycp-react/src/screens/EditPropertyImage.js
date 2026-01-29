@@ -18,17 +18,19 @@ import {
 import { ArrowBack, CloudUpload, Delete } from "@mui/icons-material";
 import { useData } from "../context/DataContext";
 import MediaUploadManager from "../components/MediaUploadManager";
-import { uploadPropertyFiles, deletePropertyFile } from "../services/s3Upload";
+import { uploadPropertyFiles, deletePropertyFile, updateMainImage } from "../services/s3Upload";
 
 const EditPropertyImage = () => {
   const navigate = useNavigate();
   const { id } = useParams();
-  const { fetchPropertyById } = useData();
+  const { fetchPropertyById, updateProperty } = useData();
   const [property, setProperty] = useState(null);
   const [loading, setLoading] = useState(true);
   const [images, setImages] = useState([]);
+  const [newFiles, setNewFiles] = useState([]); // Track new files to upload
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
   const [mainImageId, setMainImageId] = useState(null);
 
   useEffect(() => {
@@ -66,18 +68,24 @@ const EditPropertyImage = () => {
   const handleAddImages = (e) => {
     const files = Array.from(e.target.files);
     const newImages = files.map((file, index) => ({
-      id: Date.now() + index,
+      id: `temp-${Date.now()}-${index}`,
       link: URL.createObjectURL(file),
-      isVideo: false,
+      isVideo: file.type.startsWith("video/"),
       propertyId: parseInt(id),
+      file, // Store the actual file for upload
     }));
     setImages([...images, ...newImages]);
+    setNewFiles([...newFiles, ...files]);
     setError("");
+    setSuccess("");
   };
 
-  const handleMediaSelected = (files) => {
-    setImages(files);
+  const handleMediaSelected = (filesFromManager) => {
+    // filesFromManager can include File objects (new) or existing image objects
+    const actualFiles = filesFromManager.filter(f => f instanceof File);
+    setNewFiles(actualFiles);
     setError("");
+    setSuccess("");
   };
 
   const handleDeleteImage = async (imageId) => {
@@ -85,6 +93,8 @@ const EditPropertyImage = () => {
     if (!image) return;
 
     setUploading(true);
+    setError("");
+    setSuccess("");
     try {
       // If image has a URL (from S3), delete it from S3
       if (image.link && image.link.includes("s3")) {
@@ -96,9 +106,53 @@ const EditPropertyImage = () => {
       if (mainImageId === imageId) {
         setMainImageId(null);
       }
+      setSuccess("Image deleted successfully");
     } catch (err) {
       console.error("Error deleting image:", err);
       setError("Failed to delete image. Please try again.");
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleSave = async () => {
+    setUploading(true);
+    setError("");
+    setSuccess("");
+
+    try {
+      // Upload new files if any
+      if (newFiles.length > 0) {
+        const response = await uploadPropertyFiles(
+          parseInt(id),
+          newFiles,
+          mainImageId
+        );
+
+        if (response.data?.allImages) {
+          // Update local state with uploaded images
+          setImages(response.data.allImages);
+          setNewFiles([]);
+
+          // Update property with new images
+          await updateProperty(parseInt(id), {
+            images: response.data.allImages,
+            mainImage: response.data.mainImage,
+          });
+        }
+        setSuccess("Images uploaded successfully!");
+      } else if (mainImageId) {
+        // No new files but main image changed - use dedicated endpoint
+        const response = await updateMainImage(parseInt(id), mainImageId);
+        if (response.data?.mainImage) {
+          setSuccess("Main image updated successfully!");
+        }
+      } else {
+        setError("No changes to save");
+      }
+    } catch (err) {
+      console.error("Error saving images:", err);
+      setError("Failed to save images. Please try again.");
     } finally {
       setUploading(false);
     }
@@ -148,6 +202,12 @@ const EditPropertyImage = () => {
               </Alert>
             )}
 
+            {success && (
+              <Alert severity="success" sx={{ mb: 3 }}>
+                {success}
+              </Alert>
+            )}
+
             <MediaUploadManager
               onFilesSelected={handleMediaSelected}
               onFileDeleted={handleDeleteImage}
@@ -159,15 +219,29 @@ const EditPropertyImage = () => {
               loading={uploading}
             />
 
-            <Button
-              fullWidth
-              variant="contained"
-              onClick={() => navigate(`/property/${id}`)}
-              sx={{ mt: 3 }}
-              disabled={uploading}
-            >
-              Done
-            </Button>
+            <Grid container spacing={2} sx={{ mt: 3 }}>
+              <Grid item xs={12} sm={6}>
+                <Button
+                  fullWidth
+                  variant="contained"
+                  onClick={handleSave}
+                  disabled={uploading || (newFiles.length === 0 && !mainImageId)}
+                  startIcon={uploading ? <CircularProgress size={20} /> : <CloudUpload />}
+                >
+                  {uploading ? "Uploading..." : "Save Changes"}
+                </Button>
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <Button
+                  fullWidth
+                  variant="outlined"
+                  onClick={() => navigate(`/property/${id}`)}
+                  disabled={uploading}
+                >
+                  Back to Property
+                </Button>
+              </Grid>
+            </Grid>
           </CardContent>
         </Card>
       </Container>

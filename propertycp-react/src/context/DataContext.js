@@ -202,6 +202,16 @@ export const DataProvider = ({ children }) => {
     }
   };
 
+  const deleteUser = async (id) => {
+    try {
+      await api.deleteUser(parseInt(id));
+      return true;
+    } catch (error) {
+      console.error('Failed to delete user:', error);
+      throw error;
+    }
+  };
+
   const value = {
     properties,
     leads,
@@ -226,6 +236,7 @@ export const DataProvider = ({ children }) => {
     // User methods
     fetchAllUsers,
     fetchUserById,
+    deleteUser,
   };
 
   return <DataContext.Provider value={value}>{children}</DataContext.Provider>;

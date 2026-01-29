@@ -15,8 +15,11 @@ uploads.post('/property/:propertyId', authMiddleware, async (c) => {
     const propertyId = c.req.param('propertyId');
     const formData = await c.req.formData();
 
+    // Get mainImageId if provided
+    const mainImageId = formData.get('mainImageId')?.toString() || null;
+
     // Verify property exists and belongs to user
-    const property = db.prepare('SELECT created_by_id, images FROM properties WHERE id = ?').get(propertyId) as any;
+    const property = db.prepare('SELECT created_by_id, images, main_image FROM properties WHERE id = ?').get(propertyId) as any;
 
     if (!property) {
       return c.json(
@@ -121,9 +124,27 @@ uploads.post('/property/:propertyId', authMiddleware, async (c) => {
 
     const allImages = [...existingImages, ...newImages];
 
-    // Update property with new images
-    db.prepare('UPDATE properties SET images = ?, updated_date = datetime("now") WHERE id = ?').run(
+    // Determine main image URL
+    let mainImageUrl = property.main_image;
+
+    if (mainImageId) {
+      // Find the image with matching ID in allImages
+      const mainImg = allImages.find((img: any) => img.id?.toString() === mainImageId);
+      if (mainImg) {
+        mainImageUrl = mainImg.link;
+      }
+    } else if (allImages.length > 0 && !mainImageUrl) {
+      // If no main image set yet, use first non-video image
+      const firstImage = allImages.find((img: any) => !img.isVideo);
+      if (firstImage) {
+        mainImageUrl = firstImage.link;
+      }
+    }
+
+    // Update property with new images and main image
+    db.prepare('UPDATE properties SET images = ?, main_image = ?, updated_date = datetime("now") WHERE id = ?').run(
       JSON.stringify(allImages),
+      mainImageUrl,
       propertyId
     );
 
@@ -134,6 +155,7 @@ uploads.post('/property/:propertyId', authMiddleware, async (c) => {
         uploadedCount: uploadedFiles.length,
         files: newImages,
         allImages,
+        mainImage: mainImageUrl,
       },
     });
   } catch (error: any) {
@@ -142,6 +164,81 @@ uploads.post('/property/:propertyId', authMiddleware, async (c) => {
       {
         success: false,
         message: error.message || 'Failed to upload files',
+      },
+      500
+    );
+  }
+});
+
+/**
+ * Update main image for property
+ */
+uploads.put('/property/:propertyId/main-image', authMiddleware, async (c) => {
+  try {
+    const currentUser = c.get('user') as AuthUser;
+    const propertyId = c.req.param('propertyId');
+    const { imageId } = await c.req.json();
+
+    // Verify property exists and belongs to user
+    const property = db.prepare('SELECT created_by_id, images FROM properties WHERE id = ?').get(propertyId) as any;
+
+    if (!property) {
+      return c.json(
+        {
+          success: false,
+          message: 'Property not found',
+        },
+        404
+      );
+    }
+
+    if (property.created_by_id !== currentUser.id && currentUser.userType !== 'Admin') {
+      return c.json(
+        {
+          success: false,
+          message: 'Unauthorized to update this property',
+        },
+        403
+      );
+    }
+
+    // Parse images and find the one to set as main
+    let images = [];
+    if (property.images) {
+      images = JSON.parse(property.images);
+    }
+
+    const mainImg = images.find((img: any) => img.id?.toString() === imageId?.toString());
+
+    if (!mainImg) {
+      return c.json(
+        {
+          success: false,
+          message: 'Image not found',
+        },
+        404
+      );
+    }
+
+    // Update property main image
+    db.prepare('UPDATE properties SET main_image = ?, updated_date = datetime("now") WHERE id = ?').run(
+      mainImg.link,
+      propertyId
+    );
+
+    return c.json({
+      success: true,
+      message: 'Main image updated successfully',
+      data: {
+        mainImage: mainImg.link,
+      },
+    });
+  } catch (error: any) {
+    console.error('Update main image error:', error);
+    return c.json(
+      {
+        success: false,
+        message: error.message || 'Failed to update main image',
       },
       500
     );

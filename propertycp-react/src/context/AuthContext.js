@@ -62,7 +62,10 @@ export const AuthProvider = ({ children }) => {
     try {
       const response = await api.updateUser(userId, updates);
       const updatedUser = response.data;
-      setUser(updatedUser);
+      // Only update the current user state if we're updating the logged-in user
+      if (user && user.id === userId) {
+        setUser(updatedUser);
+      }
       return { success: true, user: updatedUser };
     } catch (error) {
       throw error;

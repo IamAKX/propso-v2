@@ -59,9 +59,19 @@ const KYC = () => {
     setError("");
     setSuccess(false);
 
-    // Validation - check if all files are selected
-    if (!documents.aadharFront || !documents.aadharBack || !documents.panCard) {
-      setError("Please select all required documents");
+    // Validation - check if all documents exist (either uploaded or newly selected)
+    const hasAadharFront = user?.aadharFront || documents.aadharFront;
+    const hasAadharBack = user?.aadharBack || documents.aadharBack;
+    const hasPanCard = user?.pan || documents.panCard;
+
+    if (!hasAadharFront || !hasAadharBack || !hasPanCard) {
+      setError("Please upload all required documents");
+      return;
+    }
+
+    // Check if there are any new documents to upload
+    if (!documents.aadharFront && !documents.aadharBack && !documents.panCard) {
+      setError("No new documents to upload");
       return;
     }
 
@@ -69,29 +79,47 @@ const KYC = () => {
     setUploading(true);
 
     try {
-      // Upload all files to S3 first
-      const [aadharFrontResponse, aadharBackResponse, panCardResponse] =
-        await Promise.all([
-          uploadKYCDocument("aadhar_front", documents.aadharFront),
-          uploadKYCDocument("aadhar_back", documents.aadharBack),
-          uploadKYCDocument("pan", documents.panCard),
-        ]);
+      // Upload only new files to S3
+      let aadharFrontUrl = user?.aadharFront;
+      let aadharBackUrl = user?.aadharBack;
+      let panCardUrl = user?.pan;
 
-      // Check if all uploads were successful
-      if (
-        !aadharFrontResponse.success ||
-        !aadharBackResponse.success ||
-        !panCardResponse.success
-      ) {
-        throw new Error("Failed to upload one or more documents to S3");
+      // Upload new Aadhar Front if selected
+      if (documents.aadharFront) {
+        const aadharFrontResponse = await uploadKYCDocument(
+          "aadhar_front",
+          documents.aadharFront
+        );
+        if (!aadharFrontResponse.success) {
+          throw new Error("Failed to upload Aadhar Front to S3");
+        }
+        aadharFrontUrl = aadharFrontResponse.data?.url;
       }
 
-      const aadharFrontUrl = aadharFrontResponse.data?.url;
-      const aadharBackUrl = aadharBackResponse.data?.url;
-      const panCardUrl = panCardResponse.data?.url;
+      // Upload new Aadhar Back if selected
+      if (documents.aadharBack) {
+        const aadharBackResponse = await uploadKYCDocument(
+          "aadhar_back",
+          documents.aadharBack
+        );
+        if (!aadharBackResponse.success) {
+          throw new Error("Failed to upload Aadhar Back to S3");
+        }
+        aadharBackUrl = aadharBackResponse.data?.url;
+      }
 
+      // Upload new PAN Card if selected
+      if (documents.panCard) {
+        const panCardResponse = await uploadKYCDocument("pan", documents.panCard);
+        if (!panCardResponse.success) {
+          throw new Error("Failed to upload PAN Card to S3");
+        }
+        panCardUrl = panCardResponse.data?.url;
+      }
+
+      // Verify all URLs are available
       if (!aadharFrontUrl || !aadharBackUrl || !panCardUrl) {
-        throw new Error("Failed to get S3 URLs for uploaded documents");
+        throw new Error("Failed to get S3 URLs for documents");
       }
 
       // Update user with S3 URLs
@@ -121,6 +149,7 @@ const KYC = () => {
 
   const isKycSubmitted =
     user?.status === "PENDING" || user?.status === "ACTIVE";
+  const isKycApproved = user?.status === "ACTIVE";
 
   return (
     <Box>
@@ -217,14 +246,22 @@ const KYC = () => {
 
         {success && (
           <Alert severity="success" sx={{ mb: 3 }}>
-            KYC documents submitted successfully! Your documents are now under
-            review. Redirecting to profile...
+            {isKycSubmitted
+              ? "KYC documents updated successfully! Your updated documents are now under review. Redirecting to profile..."
+              : "KYC documents submitted successfully! Your documents are now under review. Redirecting to profile..."}
           </Alert>
         )}
 
         {error && (
           <Alert severity="error" sx={{ mb: 3 }}>
             {error}
+          </Alert>
+        )}
+
+        {/* KYC Approved Message */}
+        {isKycApproved && (
+          <Alert severity="info" sx={{ mb: 3 }}>
+            Your KYC documents have been verified and approved. You cannot modify or delete these documents. If you need to update your information, please contact support.
           </Alert>
         )}
 
@@ -236,9 +273,11 @@ const KYC = () => {
               <KYCDocumentUpload
                 documentType="aadhar_front"
                 label="Aadhar Card (Front)"
+                initialUrl={user?.aadharFront}
                 onFileSelect={(file) => handleFileSelect("aadharFront", file)}
                 onDelete={() => handleKYCDelete("aadharFront")}
                 loading={uploading}
+                disabled={isKycApproved}
               />
             </Grid>
 
@@ -247,9 +286,11 @@ const KYC = () => {
               <KYCDocumentUpload
                 documentType="aadhar_back"
                 label="Aadhar Card (Back)"
+                initialUrl={user?.aadharBack}
                 onFileSelect={(file) => handleFileSelect("aadharBack", file)}
                 onDelete={() => handleKYCDelete("aadharBack")}
                 loading={uploading}
+                disabled={isKycApproved}
               />
             </Grid>
 
@@ -258,32 +299,40 @@ const KYC = () => {
               <KYCDocumentUpload
                 documentType="pan"
                 label="PAN Card"
+                initialUrl={user?.pan}
                 onFileSelect={(file) => handleFileSelect("panCard", file)}
                 onDelete={() => handleKYCDelete("panCard")}
                 loading={uploading}
+                disabled={isKycApproved}
               />
             </Grid>
 
-            {/* Submit Button */}
-            <Grid item xs={12}>
-              <Button
-                fullWidth
-                type="submit"
-                variant="contained"
-                size="large"
-                disabled={loading || success || uploading}
-                startIcon={
-                  loading ? <CircularProgress size={20} /> : <CheckCircle />
-                }
-                sx={{ py: 1.5 }}
-              >
-                {uploading
-                  ? "Uploading documents..."
-                  : loading
-                  ? "Submitting..."
-                  : "Submit for Verification"}
-              </Button>
-            </Grid>
+            {/* Submit Button - Only show if KYC is not approved */}
+            {!isKycApproved && (
+              <Grid item xs={12}>
+                <Button
+                  fullWidth
+                  type="submit"
+                  variant="contained"
+                  size="large"
+                  disabled={loading || success || uploading}
+                  startIcon={
+                    loading ? <CircularProgress size={20} /> : <CheckCircle />
+                  }
+                  sx={{ py: 1.5 }}
+                >
+                  {uploading
+                    ? "Uploading documents..."
+                    : loading
+                    ? isKycSubmitted
+                      ? "Updating..."
+                      : "Submitting..."
+                    : isKycSubmitted
+                    ? "Update Documents"
+                    : "Submit for Verification"}
+                </Button>
+              </Grid>
+            )}
           </Grid>
         </form>
 

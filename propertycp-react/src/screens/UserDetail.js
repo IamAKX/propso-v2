@@ -24,6 +24,7 @@ import {
   DialogContent,
   DialogActions,
   Alert,
+  Paper,
 } from '@mui/material';
 import {
   ArrowBack,
@@ -35,6 +36,7 @@ import {
   Delete,
   CardMembership,
   AdminPanelSettings,
+  Close,
 } from '@mui/icons-material';
 import { useAuth } from '../context/AuthContext';
 import { useData } from '../context/DataContext';
@@ -43,11 +45,14 @@ const UserDetail = () => {
   const navigate = useNavigate();
   const { id } = useParams();
   const { user: currentUser, isAdmin, updateUserData } = useAuth();
-  const { fetchUserById } = useData();
+  const { fetchUserById, deleteUser } = useData();
   const [userData, setUserData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [documentViewerOpen, setDocumentViewerOpen] = useState(false);
+  const [selectedDocument, setSelectedDocument] = useState(null);
+  const [selectedDocumentLabel, setSelectedDocumentLabel] = useState('');
 
   useEffect(() => {
     if (!isAdmin) {
@@ -99,6 +104,18 @@ const UserDetail = () => {
     }
   };
 
+  const handleViewDocument = (documentUrl, label) => {
+    setSelectedDocument(documentUrl);
+    setSelectedDocumentLabel(label);
+    setDocumentViewerOpen(true);
+  };
+
+  const handleCloseDocumentViewer = () => {
+    setDocumentViewerOpen(false);
+    setSelectedDocument(null);
+    setSelectedDocumentLabel('');
+  };
+
   const handleSuspend = async () => {
     setActionLoading(true);
     try {
@@ -123,6 +140,19 @@ const UserDetail = () => {
     } catch (error) {
       console.error('Error activating user:', error);
     } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    setActionLoading(true);
+    try {
+      await deleteUser(userData.id);
+      setDeleteDialogOpen(false);
+      navigate('/user-list');
+    } catch (error) {
+      console.error('Error deleting user:', error);
+      alert('Failed to delete user. Please try again.');
       setActionLoading(false);
     }
   };
@@ -241,8 +271,147 @@ const UserDetail = () => {
           </CardContent>
         </Card>
 
+        {/* KYC Documents Display */}
+        {(userData.aadharFront || userData.aadharBack || userData.pan) && (
+          <Card sx={{ mb: 3 }}>
+            <CardContent>
+              <Typography variant="h6" gutterBottom fontWeight="600">
+                KYC Documents
+              </Typography>
+              <Grid container spacing={2}>
+                {/* Aadhar Front */}
+                <Grid item xs={12} sm={4}>
+                  <Paper elevation={2} sx={{ p: 2, textAlign: 'center' }}>
+                    <Typography variant="subtitle2" gutterBottom fontWeight="600">
+                      Aadhar Card (Front)
+                    </Typography>
+                    {userData.aadharFront ? (
+                      <>
+                        <Box
+                          component="img"
+                          src={userData.aadharFront}
+                          alt="Aadhar Front"
+                          sx={{
+                            width: '100%',
+                            height: 150,
+                            objectFit: 'cover',
+                            borderRadius: 1,
+                            cursor: 'pointer',
+                            transition: 'transform 0.2s',
+                            '&:hover': {
+                              transform: 'scale(1.05)',
+                            },
+                          }}
+                          onClick={() => handleViewDocument(userData.aadharFront, 'Aadhar Card (Front)')}
+                        />
+                        <Button
+                          size="small"
+                          fullWidth
+                          sx={{ mt: 1 }}
+                          onClick={() => handleViewDocument(userData.aadharFront, 'Aadhar Card (Front)')}
+                        >
+                          View Full Size
+                        </Button>
+                      </>
+                    ) : (
+                      <Alert severity="warning" sx={{ mt: 1 }}>
+                        Not Uploaded
+                      </Alert>
+                    )}
+                  </Paper>
+                </Grid>
+
+                {/* Aadhar Back */}
+                <Grid item xs={12} sm={4}>
+                  <Paper elevation={2} sx={{ p: 2, textAlign: 'center' }}>
+                    <Typography variant="subtitle2" gutterBottom fontWeight="600">
+                      Aadhar Card (Back)
+                    </Typography>
+                    {userData.aadharBack ? (
+                      <>
+                        <Box
+                          component="img"
+                          src={userData.aadharBack}
+                          alt="Aadhar Back"
+                          sx={{
+                            width: '100%',
+                            height: 150,
+                            objectFit: 'cover',
+                            borderRadius: 1,
+                            cursor: 'pointer',
+                            transition: 'transform 0.2s',
+                            '&:hover': {
+                              transform: 'scale(1.05)',
+                            },
+                          }}
+                          onClick={() => handleViewDocument(userData.aadharBack, 'Aadhar Card (Back)')}
+                        />
+                        <Button
+                          size="small"
+                          fullWidth
+                          sx={{ mt: 1 }}
+                          onClick={() => handleViewDocument(userData.aadharBack, 'Aadhar Card (Back)')}
+                        >
+                          View Full Size
+                        </Button>
+                      </>
+                    ) : (
+                      <Alert severity="warning" sx={{ mt: 1 }}>
+                        Not Uploaded
+                      </Alert>
+                    )}
+                  </Paper>
+                </Grid>
+
+                {/* PAN Card */}
+                <Grid item xs={12} sm={4}>
+                  <Paper elevation={2} sx={{ p: 2, textAlign: 'center' }}>
+                    <Typography variant="subtitle2" gutterBottom fontWeight="600">
+                      PAN Card
+                    </Typography>
+                    {userData.pan ? (
+                      <>
+                        <Box
+                          component="img"
+                          src={userData.pan}
+                          alt="PAN Card"
+                          sx={{
+                            width: '100%',
+                            height: 150,
+                            objectFit: 'cover',
+                            borderRadius: 1,
+                            cursor: 'pointer',
+                            transition: 'transform 0.2s',
+                            '&:hover': {
+                              transform: 'scale(1.05)',
+                            },
+                          }}
+                          onClick={() => handleViewDocument(userData.pan, 'PAN Card')}
+                        />
+                        <Button
+                          size="small"
+                          fullWidth
+                          sx={{ mt: 1 }}
+                          onClick={() => handleViewDocument(userData.pan, 'PAN Card')}
+                        >
+                          View Full Size
+                        </Button>
+                      </>
+                    ) : (
+                      <Alert severity="warning" sx={{ mt: 1 }}>
+                        Not Uploaded
+                      </Alert>
+                    )}
+                  </Paper>
+                </Grid>
+              </Grid>
+            </CardContent>
+          </Card>
+        )}
+
         {/* KYC Documents (if status is PENDING) */}
-        {userData.status === 'PENDING' && (
+        {userData.status === 'PENDING' &&
+         (userData.aadharFront || userData.aadharBack || userData.pan) && (
           <Card sx={{ mb: 3, bgcolor: 'warning.lighter' }}>
             <CardContent>
               <Typography variant="h6" gutterBottom fontWeight="600" color="warning.dark">
@@ -375,27 +544,80 @@ const UserDetail = () => {
       </Container>
 
       {/* Delete Confirmation Dialog */}
-      <Dialog open={deleteDialogOpen} onClose={() => setDeleteDialogOpen(false)}>
+      <Dialog open={deleteDialogOpen} onClose={() => !actionLoading && setDeleteDialogOpen(false)}>
         <DialogTitle>Delete User Account?</DialogTitle>
         <DialogContent>
-          <Typography>
-            Are you sure you want to delete <strong>{userData.fullName}</strong>? This action
-            cannot be undone and all user data will be permanently removed.
+          <Typography paragraph>
+            Are you sure you want to delete <strong>{userData.fullName}</strong>?
           </Typography>
+          <Typography variant="body2" color="error" paragraph>
+            This action cannot be undone and will permanently delete:
+          </Typography>
+          <Box component="ul" sx={{ mt: 1, mb: 2, pl: 3 }}>
+            <Typography component="li" variant="body2" color="text.secondary">
+              User account and profile data
+            </Typography>
+            <Typography component="li" variant="body2" color="text.secondary">
+              All KYC documents (Aadhar, PAN) from S3
+            </Typography>
+            <Typography component="li" variant="body2" color="text.secondary">
+              All properties posted by this user
+            </Typography>
+            <Typography component="li" variant="body2" color="text.secondary">
+              All property images from S3
+            </Typography>
+            <Typography component="li" variant="body2" color="text.secondary">
+              All leads and favorites
+            </Typography>
+          </Box>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setDeleteDialogOpen(false)}>Cancel</Button>
+          <Button onClick={() => setDeleteDialogOpen(false)} disabled={actionLoading}>
+            Cancel
+          </Button>
           <Button
-            onClick={() => {
-              // In a real app, call deleteUser API
-              setDeleteDialogOpen(false);
-              navigate('/user-list');
-            }}
+            onClick={handleDelete}
             color="error"
             variant="contained"
+            disabled={actionLoading}
+            startIcon={actionLoading ? <CircularProgress size={20} /> : null}
           >
-            Delete
+            {actionLoading ? 'Deleting...' : 'Delete Permanently'}
           </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Document Viewer Dialog */}
+      <Dialog
+        open={documentViewerOpen}
+        onClose={handleCloseDocumentViewer}
+        maxWidth="md"
+        fullWidth
+      >
+        <DialogTitle>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <Typography variant="h6">{selectedDocumentLabel}</Typography>
+            <IconButton onClick={handleCloseDocumentViewer} size="small">
+              <Close />
+            </IconButton>
+          </Box>
+        </DialogTitle>
+        <DialogContent>
+          {selectedDocument && (
+            <Box
+              component="img"
+              src={selectedDocument}
+              alt={selectedDocumentLabel}
+              sx={{
+                width: '100%',
+                maxHeight: '70vh',
+                objectFit: 'contain',
+              }}
+            />
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseDocumentViewer}>Close</Button>
         </DialogActions>
       </Dialog>
     </Box>

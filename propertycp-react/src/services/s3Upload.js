@@ -20,9 +20,10 @@ axiosInstance.interceptors.request.use((config) => {
  * Upload property images and videos to S3
  * @param {number} propertyId - Property ID
  * @param {File[]} files - Array of files to upload
+ * @param {string|number} mainImageId - Optional ID of the file to set as main image
  * @returns {Promise<Object>} Upload response data
  */
-export const uploadPropertyFiles = async (propertyId, files) => {
+export const uploadPropertyFiles = async (propertyId, files, mainImageId = null) => {
   try {
     const formData = new FormData();
 
@@ -30,6 +31,11 @@ export const uploadPropertyFiles = async (propertyId, files) => {
     files.forEach((file, index) => {
       formData.append(`file-${index}`, file);
     });
+
+    // Add mainImageId if provided
+    if (mainImageId) {
+      formData.append('mainImageId', mainImageId.toString());
+    }
 
     const response = await axiosInstance.post(
       `/uploads/property/${propertyId}`,
@@ -45,6 +51,26 @@ export const uploadPropertyFiles = async (propertyId, files) => {
   } catch (error) {
     console.error("Upload error:", error);
     throw new Error(error.response?.data?.message || "Failed to upload files");
+  }
+};
+
+/**
+ * Update main image for a property
+ * @param {number} propertyId - Property ID
+ * @param {number} imageId - Image ID to set as main
+ * @returns {Promise<Object>} Update response data
+ */
+export const updateMainImage = async (propertyId, imageId) => {
+  try {
+    const response = await axiosInstance.put(
+      `/uploads/property/${propertyId}/main-image`,
+      { imageId }
+    );
+
+    return response.data;
+  } catch (error) {
+    console.error("Update main image error:", error);
+    throw new Error(error.response?.data?.message || "Failed to update main image");
   }
 };
 

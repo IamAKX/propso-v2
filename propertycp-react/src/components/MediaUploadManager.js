@@ -144,7 +144,9 @@ const MediaUploadManager = ({
 
   const handleSetMainImage = (index) => {
     const preview = previewUrls[index];
-    onMainImageSelect(preview);
+    if (onMainImageSelect) {
+      onMainImageSelect(preview.id);
+    }
   };
 
   return (

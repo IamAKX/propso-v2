@@ -68,7 +68,7 @@ function AppRoutes() {
       <Route path="/post-property/images" element={<ProtectedRoute><PickPropertyImages /></ProtectedRoute>} />
       <Route path="/post-property/videos" element={<ProtectedRoute><PickPropertyVideos /></ProtectedRoute>} />
       <Route path="/user-list" element={<ProtectedRoute><UserList /></ProtectedRoute>} />
-      <Route path="/user/:id" element={<ProtectedRoute><UserDetail /></ProtectedRoute>} />
+      <Route path="/user-detail/:id" element={<ProtectedRoute><UserDetail /></ProtectedRoute>} />
       <Route path="/edit-property-text/:id" element={<ProtectedRoute><EditPropertyText /></ProtectedRoute>} />
       <Route path="/edit-property-image/:id" element={<ProtectedRoute><EditPropertyImage /></ProtectedRoute>} />
       <Route path="/edit-property-video/:id" element={<ProtectedRoute><EditPropertyVideo /></ProtectedRoute>} />

@@ -2,6 +2,7 @@ import { Hono } from 'hono';
 import bcrypt from 'bcrypt';
 import db, { toCamelCase, toSnakeCase } from '../db/database';
 import { authMiddleware, AuthUser } from '../middleware/auth';
+import { deleteFromS3, extractS3KeyFromUrl } from '../services/s3';
 
 const users = new Hono();
 
@@ -192,6 +193,75 @@ users.delete('/:id', async (c) => {
   try {
     const id = c.req.param('id');
 
+    // Fetch user to get S3 URLs before deletion
+    const user: any = db.prepare('SELECT * FROM users WHERE id = ?').get(id);
+
+    if (!user) {
+      return c.json({
+        success: false,
+        message: 'User not found',
+      }, 404);
+    }
+
+    // Delete KYC documents from S3
+    const kycDocuments = [user.aadhar_front, user.aadhar_back, user.pan];
+    for (const docUrl of kycDocuments) {
+      if (docUrl) {
+        try {
+          const key = extractS3KeyFromUrl(docUrl);
+          await deleteFromS3(key);
+          console.log(`✅ Deleted KYC document: ${key}`);
+        } catch (error) {
+          console.error(`⚠️ Failed to delete KYC document: ${docUrl}`, error);
+          // Continue with deletion even if S3 deletion fails
+        }
+      }
+    }
+
+    // Get all properties owned by this user
+    const userProperties: any[] = db.prepare('SELECT * FROM properties WHERE created_by_id = ?').all(id);
+
+    // Delete property images from S3
+    for (const property of userProperties) {
+      // Delete main image
+      if (property.main_image) {
+        try {
+          const key = extractS3KeyFromUrl(property.main_image);
+          await deleteFromS3(key);
+          console.log(`✅ Deleted main property image: ${key}`);
+        } catch (error) {
+          console.error(`⚠️ Failed to delete main property image: ${property.main_image}`, error);
+        }
+      }
+
+      // Delete property images array
+      const images = property.images ? JSON.parse(property.images) : [];
+      for (const imageUrl of images) {
+        if (imageUrl) {
+          try {
+            const key = extractS3KeyFromUrl(imageUrl);
+            await deleteFromS3(key);
+            console.log(`✅ Deleted property image: ${key}`);
+          } catch (error) {
+            console.error(`⚠️ Failed to delete property image: ${imageUrl}`, error);
+          }
+        }
+      }
+    }
+
+    // Delete user's leads (cascade)
+    db.prepare('DELETE FROM leads WHERE created_by_id = ?').run(id);
+    console.log(`✅ Deleted all leads for user ${id}`);
+
+    // Delete user's properties (cascade)
+    db.prepare('DELETE FROM properties WHERE created_by_id = ?').run(id);
+    console.log(`✅ Deleted all properties for user ${id}`);
+
+    // Delete user's favorites (cascade)
+    db.prepare('DELETE FROM favorites WHERE user_id = ?').run(id);
+    console.log(`✅ Deleted all favorites for user ${id}`);
+
+    // Finally, delete the user
     const result = db.prepare('DELETE FROM users WHERE id = ?').run(id);
 
     if (result.changes === 0) {
@@ -201,9 +271,11 @@ users.delete('/:id', async (c) => {
       }, 404);
     }
 
+    console.log(`✅ Successfully deleted user ${id} and all associated data`);
+
     return c.json({
       success: true,
-      message: 'User deleted successfully',
+      message: 'User and all associated data deleted successfully',
     });
   } catch (error: any) {
     console.error('Delete user error:', error);

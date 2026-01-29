@@ -1,6 +1,7 @@
 import { Hono } from 'hono';
 import db, { toCamelCase, toSnakeCase } from '../db/database';
 import { authMiddleware, AuthUser } from '../middleware/auth';
+import { CITIES, PROPERTY_TYPES } from '../constants';
 
 const properties = new Hono();
 
@@ -15,8 +16,8 @@ properties.get('/', async (c) => {
     const params: any[] = [];
 
     if (city) {
-      conditions.push('city LIKE ?');
-      params.push(`%${city}%`);
+      conditions.push('city = ?');
+      params.push(city);
     }
 
     if (propertyType) {
@@ -134,6 +135,22 @@ properties.post('/', authMiddleware, async (c) => {
     const currentUser = c.get('user') as AuthUser;
     const propertyData = await c.req.json();
 
+    // Validate city
+    if (!propertyData.city || !CITIES.includes(propertyData.city)) {
+      return c.json({
+        success: false,
+        message: `Invalid city. Must be one of: ${CITIES.join(', ')}`,
+      }, 400);
+    }
+
+    // Validate property type
+    if (!propertyData.type || !PROPERTY_TYPES.includes(propertyData.type)) {
+      return c.json({
+        success: false,
+        message: `Invalid property type. Must be one of: ${PROPERTY_TYPES.join(', ')}`,
+      }, 400);
+    }
+
     // Prepare images JSON
     const imagesJson = propertyData.images ? JSON.stringify(propertyData.images) : null;
 
@@ -208,6 +225,22 @@ properties.put('/:id', authMiddleware, async (c) => {
         success: false,
         message: 'Unauthorized to update this property',
       }, 403);
+    }
+
+    // Validate city if provided
+    if (updates.city && !CITIES.includes(updates.city)) {
+      return c.json({
+        success: false,
+        message: `Invalid city. Must be one of: ${CITIES.join(', ')}`,
+      }, 400);
+    }
+
+    // Validate property type if provided
+    if (updates.type && !PROPERTY_TYPES.includes(updates.type)) {
+      return c.json({
+        success: false,
+        message: `Invalid property type. Must be one of: ${PROPERTY_TYPES.join(', ')}`,
+      }, 400);
     }
 
     // Handle images JSON

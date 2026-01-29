@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx tsx:*)",
+      "Bash(sqlite3:*)",
+      "Bash(npm run db:init:*)"
+    ]
+  }
+}
