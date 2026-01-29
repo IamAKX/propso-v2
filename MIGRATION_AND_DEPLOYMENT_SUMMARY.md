@@ -401,14 +401,18 @@ sudo sh get-docker.sh
 sudo usermod -aG docker ubuntu
 
 # 4. Clone repository
-git clone https://github.com/yourusername/propertycp.git
-cd propertycp
+git clone https://github.com/iamakx/propertycp.git
+cd propso-v2
 
 # 5. Configure environment
 cp .env.example .env
 nano .env  # Edit with EC2 IP and secure JWT secret
 
 # 6. Deploy (using pre-built images - fast and reliable on t3.small)
+docker compose pull
+docker compose up -d
+
+# Or with full cleanup/restart:
 docker compose down && docker compose pull && docker compose up -d
 
 # 7. Verify

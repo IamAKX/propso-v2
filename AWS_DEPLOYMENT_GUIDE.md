@@ -190,10 +190,10 @@ sudo ufw status
 cd ~
 
 # Clone your repository (replace with your actual repo)
-git clone https://github.com/yourusername/propertycp.git
+git clone https://github.com/iamakx/propertycp.git
 
 # Or upload files using SCP if not using Git:
-# scp -i propertycp-key.pem -r /local/path/to/cp ubuntu@YOUR_EC2_PUBLIC_IP:~/propertycp
+# scp -i propertycp-key.pem -r /local/path/to/cp ubuntu@YOUR_EC2_PUBLIC_IP:~/propso-v2
 ```
 
 ### Step 6: Configure Environment Variables
@@ -239,19 +239,27 @@ openssl rand -base64 48
 
 ```bash
 # Make sure you're in the project directory
-cd ~/propertycp
+cd ~/propso-v2
 
 # Pull pre-built images and start services (RECOMMENDED - Fastest on t3.small)
-docker compose down && docker compose up -d --force-recreate --remove-orphans
+docker compose pull
+docker compose up -d
+
+# Or with full cleanup/restart:
+docker compose down && docker compose pull && docker compose up -d
 
 # This will:
 # 1. Pull pre-built backend image from Docker Hub (iamakx/propertycp-backend:latest)
 # 2. Pull pre-built frontend image from Docker Hub (iamakx/propertycp-react:latest)
 # 3. Start both containers
 # 4. Initialize SQLite database with seed data automatically
+
+# Wait 30 seconds for services to start, then verify:
+docker compose ps
+curl http://localhost:3001
 ```
 
-**Note**: Using pre-built images is much faster than building on small EC2 instances. The Dockerfile command automatically seeds the database on startup.
+**Note**: The docker-compose.yml is configured with `image:` references, so it pulls pre-built images instead of building. No building needed on EC2!
 
 ````
 

@@ -8,17 +8,31 @@ If you have Docker installed, this is the fastest way:
 
 ```bash
 # Navigate to project root
-cd /Users/akash/Documents/cp
+cd /Users/akash/Desktop/Sanath/cp
 
-# Pull pre-built images and start (one command!)
-docker compose down && docker compose pull && docker compose up -d
+# Build images locally
+docker compose build
 
-# Wait 30 seconds for initialization, then access:
+# Tag for Docker Hub
+docker tag cp-backend iamakx/propertycp-backend:latest
+docker tag cp-frontend iamakx/propertycp-react:latest
+
+# Login and push
+docker login
+docker push iamakx/propertycp-backend:latest
+docker push iamakx/propertycp-react:latest
+
+# Then on EC2:
+# cd ~/propso-v2
+# docker compose pull
+# docker compose up -d
+
+# Access at:
 # Frontend: http://localhost:3000
 # Backend: http://localhost:3001
 ```
 
-That's it! Skip to the "Default Credentials" section below.
+See [DOCKER_BUILD_AND_PUSH_GUIDE.md](DOCKER_BUILD_AND_PUSH_GUIDE.md) for detailed build and push steps!
 
 ## 🛠️ Method 2: Local Development
 
