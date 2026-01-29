@@ -1,0 +1,92 @@
+services:
+  # Backend API - using pre-built image from Docker Hub
+  backend:
+    image: iamakx/propertycp-backend:latest
+    container_name: propertycp-backend
+    restart: unless-stopped
+    ports:
+      - "3001:3001"
+    # Load runtime environment from repository .env and expose CORS-related flags
+    env_file:
+      - .env
+    environment:
+      - PORT=${BACKEND_PORT:-3001}
+      - DATABASE_PATH=/app/database/propertycp.db
+      - JWT_SECRET=${JWT_SECRET:-a9F3kL2P7XqM8RZsB5H4D6YJc0Nw1GUEiCOKTnrmxVAdWvpehSbI}
+      - NODE_ENV=${NODE_ENV:-production}
+      - CORS_ALLOW_ALL_IPS=${CORS_ALLOW_ALL_IPS:-true}
+      - CORS_ALLOW_ALL=${CORS_ALLOW_ALL:-false}
+      - CORS_ORIGIN=${CORS_ORIGIN:-http://16.16.144.244:3000,http://localhost:3000}
+    volumes:
+      - backend-db:/app/database
+    networks:
+      - propertycp-network
+    # Run database initialization on startup
+    command: sh -c "bun run src/db/init.ts && bun run src/index.ts"
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "bun",
+          "run",
+          "-e",
+          "await fetch('http://localhost:3001/'); process.exit(0);",
+        ]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 45s
+    deploy:
+      resources:
+        limits:
+          cpus: "1"
+          memory: 512M
+        reservations:
+          cpus: "0.5"
+          memory: 256M
+
+  # Frontend React App - using pre-built image from Docker Hub
+  frontend:
+    image: iamakx/propertycp-react:latest
+    # Load .env so build args or runtime can pick values if needed
+    env_file:
+      - .env
+    container_name: propertycp-frontend
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - propertycp-network
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "wget",
+          "--no-verbose",
+          "--tries=1",
+          "--spider",
+          "http://localhost:3000/",
+        ]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 256M
+        reservations:
+          cpus: "0.25"
+          memory: 128M
+
+networks:
+  propertycp-network:
+    driver: bridge
+
+volumes:
+  backend-db:
+    driver: local
