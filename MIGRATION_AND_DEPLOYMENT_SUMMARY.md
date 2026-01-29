@@ -12,6 +12,7 @@ Complete summary of the C# to Node.js migration, frontend migration, and product
 The PropertyCP application has been successfully migrated from C# backend + Flutter frontend to Node.js backend + React frontend, with complete Docker containerization and AWS EC2 deployment readiness.
 
 ### Key Achievements:
+
 - ✅ **100% API Parity** - All C# endpoints replicated + 4 new endpoints added
 - ✅ **SQLite Integration** - Lightweight, serverless database with auto-initialization
 - ✅ **Production-Ready Docker** - Secure containers with resource limits and health checks
@@ -26,12 +27,14 @@ The PropertyCP application has been successfully migrated from C# backend + Flut
 ### Migration Details
 
 **From:**
+
 - ASP.NET Core 6.0 Web API
 - SQL Server database
 - Entity Framework Core
 - Repository pattern
 
 **To:**
+
 - Bun runtime (fast JavaScript)
 - Hono framework (lightweight, Express-like)
 - SQLite database (serverless, file-based)
@@ -41,15 +44,16 @@ The PropertyCP application has been successfully migrated from C# backend + Flut
 
 #### ✅ Fully Migrated Endpoints
 
-| Endpoint Category | C# Endpoints | Node.js Endpoints | Status |
-|-------------------|--------------|-------------------|--------|
-| Authentication | ❌ Not implemented | ✅ 2 endpoints | **Enhanced** |
-| Users | 6 endpoints | 8 endpoints | **Enhanced** |
-| Properties | 6 endpoints | 7 endpoints | **Enhanced** |
-| Leads | 5 endpoints | 6 endpoints | **Enhanced** |
-| Favorites | ❌ Not implemented | ✅ 4 endpoints | **New Feature** |
+| Endpoint Category | C# Endpoints       | Node.js Endpoints | Status          |
+| ----------------- | ------------------ | ----------------- | --------------- |
+| Authentication    | ❌ Not implemented | ✅ 2 endpoints    | **Enhanced**    |
+| Users             | 6 endpoints        | 8 endpoints       | **Enhanced**    |
+| Properties        | 6 endpoints        | 7 endpoints       | **Enhanced**    |
+| Leads             | 5 endpoints        | 6 endpoints       | **Enhanced**    |
+| Favorites         | ❌ Not implemented | ✅ 4 endpoints    | **New Feature** |
 
 **Total API Endpoints:**
+
 - C# Backend: 17 endpoints
 - Node.js Backend: 27 endpoints (+10 additional)
 
@@ -69,11 +73,13 @@ The PropertyCP application has been successfully migrated from C# backend + Flut
 #### 🔐 Authentication Implementation
 
 **C# Backend:**
+
 - No authentication middleware
 - Permissive CORS (allow all origins)
 - No JWT implementation
 
 **Node.js Backend:**
+
 - ✅ JWT-based authentication (jsonwebtoken)
 - ✅ Auth middleware for protected routes
 - ✅ Admin-only middleware for privileged operations
@@ -85,17 +91,18 @@ The PropertyCP application has been successfully migrated from C# backend + Flut
 
 **SQL Server → SQLite:**
 
-| Aspect | SQL Server (C#) | SQLite (Node.js) |
-|--------|-----------------|------------------|
-| Type | Client-server | Serverless |
-| Setup | Complex, requires server | File-based, zero config |
-| Size | ~500MB-1GB+ | ~10-20MB |
-| Deployment | Requires separate server | Embedded with app |
-| Cost | ~$15-50/month | $0 (included) |
-| Performance | High (server-grade) | Good (< 100k records) |
-| Scalability | Excellent | Good for small-medium |
+| Aspect      | SQL Server (C#)          | SQLite (Node.js)        |
+| ----------- | ------------------------ | ----------------------- |
+| Type        | Client-server            | Serverless              |
+| Setup       | Complex, requires server | File-based, zero config |
+| Size        | ~500MB-1GB+              | ~10-20MB                |
+| Deployment  | Requires separate server | Embedded with app       |
+| Cost        | ~$15-50/month            | $0 (included)           |
+| Performance | High (server-grade)      | Good (< 100k records)   |
+| Scalability | Excellent                | Good for small-medium   |
 
 **Database Schema:**
+
 - ✅ All tables migrated (Users, Properties, Leads, PropertyImages, LeadComments)
 - ✅ All relationships preserved (foreign keys)
 - ✅ Auto-timestamps (created_date, updated_date)
@@ -109,12 +116,14 @@ The PropertyCP application has been successfully migrated from C# backend + Flut
 ### Migration Details
 
 **From:**
+
 - Flutter (Dart language)
 - Material Design components
 - Mobile-first (iOS/Android)
 - State management with Provider
 
 **To:**
+
 - React.js 18 (JavaScript)
 - Material-UI v5 components
 - Web-first (responsive design)
@@ -123,6 +132,7 @@ The PropertyCP application has been successfully migrated from C# backend + Flut
 ### Component Migration Status
 
 **All Major Screens Migrated:**
+
 - ✅ Login/Register screens
 - ✅ Home screen with property listings
 - ✅ Property detail screen
@@ -137,6 +147,7 @@ The PropertyCP application has been successfully migrated from C# backend + Flut
 **Overall Score: 7/10**
 
 #### 🟢 Strengths:
+
 - Material-UI Grid system properly implemented (xs, sm, md breakpoints)
 - Bottom navigation mobile-friendly
 - Forms are mobile-friendly
@@ -166,6 +177,7 @@ The PropertyCP application has been successfully migrated from C# backend + Flut
    - **Fix Needed:** Responsive gaps: `gap: { xs: 1, sm: 2 }`
 
 #### Recommended Devices for Testing:
+
 - iPhone SE (375px width)
 - iPhone 12/13/14 (390px width)
 - Small Android phones (< 350px width)
@@ -180,6 +192,7 @@ The PropertyCP application has been successfully migrated from C# backend + Flut
 #### Backend Dockerfile Enhancements:
 
 **Before:**
+
 ```dockerfile
 FROM oven/bun:1
 COPY . .
@@ -188,6 +201,7 @@ CMD ["bun", "run", "src/index.ts"]
 ```
 
 **After:**
+
 ```dockerfile
 FROM oven/bun:1 as base
 # Install curl for healthcheck
@@ -206,6 +220,7 @@ HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
 ```
 
 **Security Improvements:**
+
 - ✅ Non-root user (appuser)
 - ✅ Production-only dependencies (smaller image)
 - ✅ Proper health checks
@@ -214,6 +229,7 @@ HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
 #### Frontend Dockerfile Enhancements:
 
 **Multi-stage build with security:**
+
 ```dockerfile
 # Build stage - compile React app
 FROM node:18-alpine as build
@@ -228,6 +244,7 @@ USER nginx
 ```
 
 **Benefits:**
+
 - ✅ Smaller final image (~50MB vs ~500MB)
 - ✅ Non-root nginx user
 - ✅ Security updates applied
@@ -236,6 +253,7 @@ USER nginx
 #### docker-compose.yml Improvements:
 
 **Added Features:**
+
 ```yaml
 services:
   backend:
@@ -245,17 +263,18 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '1'
+          cpus: "1"
           memory: 512M
         reservations:
-          cpus: '0.5'
+          cpus: "0.5"
           memory: 256M
     depends_on:
       frontend:
-        condition: service_healthy  # Wait for backend to be healthy
+        condition: service_healthy # Wait for backend to be healthy
 ```
 
 **Benefits:**
+
 - ✅ Environment variable support
 - ✅ Resource limits prevent OOM kills
 - ✅ Health-based startup ordering
@@ -268,6 +287,7 @@ services:
 ### Environment Variables Structure
 
 **Root .env (for docker-compose):**
+
 ```env
 # Backend
 BACKEND_PORT=3001
@@ -279,6 +299,7 @@ REACT_APP_API_URL=http://localhost:3001/api
 ```
 
 **Backend .env:**
+
 ```env
 PORT=3001
 DATABASE_PATH=./database/propertycp.db
@@ -287,6 +308,7 @@ NODE_ENV=development
 ```
 
 **Frontend .env:**
+
 ```env
 REACT_APP_API_URL=http://localhost:3001/api
 ```
@@ -294,6 +316,7 @@ REACT_APP_API_URL=http://localhost:3001/api
 ### Security Recommendations:
 
 1. **Generate Secure JWT Secret:**
+
    ```bash
    openssl rand -base64 48
    ```
@@ -322,6 +345,7 @@ REACT_APP_API_URL=http://localhost:3001/api
 **File:** `AWS_DEPLOYMENT_GUIDE.md` (26KB, 650+ lines)
 
 **Covers:**
+
 1. **Prerequisites & Setup**
    - EC2 instance selection (t2.small recommended)
    - Security group configuration
@@ -384,11 +408,11 @@ cd propertycp
 cp .env.example .env
 nano .env  # Edit with EC2 IP and secure JWT secret
 
-# 6. Deploy
-docker-compose up -d --build
+# 6. Deploy (using pre-built images - fast and reliable on t3.small)
+docker compose down && docker compose pull && docker compose up -d
 
 # 7. Verify
-docker-compose ps
+docker compose ps
 curl http://localhost:3001
 
 # 8. Access at http://YOUR_EC2_IP:3000
@@ -409,6 +433,7 @@ curl http://localhost:3001
 ### Schema Overview
 
 **Tables:**
+
 1. **users**
    - id, full_name, email, password (hashed), mobile_no
    - user_type (Agent, Buyer, Admin)
@@ -436,12 +461,14 @@ curl http://localhost:3001
 ### Sample Data Included
 
 **Seeded on First Run:**
+
 - 3 users (1 admin, 2 agents) with default passwords
 - 6 sample properties (residential & commercial)
 - 3 sample leads with comments
 - Test favorites
 
 **Default Credentials:**
+
 ```
 Admin: admin@example.com / admin123
 Agent: john@example.com / password123
@@ -451,12 +478,14 @@ Agent: jane@example.com / password123
 ### Database Operations
 
 **Initialize/Reinitialize:**
+
 ```bash
 cd propertycp-backend
 bun run db:init
 ```
 
 **Direct SQLite Access:**
+
 ```bash
 # On host
 sqlite3 propertycp-backend/database/propertycp.db
@@ -473,11 +502,13 @@ SELECT * FROM users;
 ```
 
 **Backup:**
+
 ```bash
 docker cp propertycp-backend:/app/database/propertycp.db backup-$(date +%Y%m%d).db
 ```
 
 **Restore:**
+
 ```bash
 docker cp backup-20260103.db propertycp-backend:/app/database/propertycp.db
 docker-compose restart backend
@@ -526,6 +557,7 @@ curl -X DELETE http://localhost:3001/api/leads/1 \
 ### Frontend Testing
 
 **Manual Testing Checklist:**
+
 - [ ] Login page loads
 - [ ] Can login with default credentials
 - [ ] Home screen shows properties
@@ -568,20 +600,24 @@ docker inspect propertycp-frontend | grep -A 10 Health
 ### Resource Usage
 
 **Local Development:**
+
 - Backend: ~100-120MB RAM, ~5-10% CPU (idle)
 - Frontend (dev server): ~150-200MB RAM, ~10% CPU
 - Total: ~250-320MB RAM
 
 **Docker Production:**
+
 - Backend container: ~100-120MB RAM, ~2-5% CPU
 - Frontend container (Nginx): ~20-30MB RAM, ~1% CPU
 - Total: ~150-180MB RAM
 
 **EC2 t2.micro (1GB RAM):**
+
 - Can run, but may be slow under load
 - Recommended for testing only
 
 **EC2 t2.small (2GB RAM):**
+
 - Comfortable operation
 - ~50% RAM usage with headroom
 - Recommended for small production deployments
@@ -589,11 +625,13 @@ docker inspect propertycp-frontend | grep -A 10 Health
 ### Build Times
 
 **Local (MacBook Pro M1):**
+
 - Backend build: ~10-15 seconds
 - Frontend build: ~30-45 seconds
 - Total docker-compose build: ~1-2 minutes
 
 **EC2 t2.small:**
+
 - Backend build: ~30-45 seconds
 - Frontend build: ~2-3 minutes
 - Total docker-compose build: ~3-5 minutes
@@ -601,6 +639,7 @@ docker inspect propertycp-frontend | grep -A 10 Health
 ### API Response Times
 
 **Local Testing (avg over 100 requests):**
+
 - GET /api/properties: ~5-10ms
 - POST /api/auth/login: ~100-150ms (bcrypt hashing)
 - GET /api/leads: ~10-20ms
@@ -613,11 +652,13 @@ docker inspect propertycp-frontend | grep -A 10 Health
 ### Production Security Checklist
 
 **Environment Variables:**
+
 - [x] JWT_SECRET changed from default
 - [x] Generated using `openssl rand -base64 48`
 - [ ] Stored securely, not in Git
 
 **Docker Security:**
+
 - [x] Non-root users in containers
 - [x] Resource limits configured
 - [x] Only production dependencies
@@ -625,6 +666,7 @@ docker inspect propertycp-frontend | grep -A 10 Health
 - [x] Health checks configured
 
 **Server Security:**
+
 - [ ] Firewall (UFW) enabled with minimal ports
 - [ ] SSH key-based authentication only
 - [ ] Disable password authentication
@@ -632,6 +674,7 @@ docker inspect propertycp-frontend | grep -A 10 Health
 - [ ] Fail2ban installed (optional)
 
 **Application Security:**
+
 - [x] JWT token expiration set (7 days)
 - [x] Password hashing with bcrypt (10 rounds)
 - [x] SQL injection prevention (prepared statements)
@@ -641,12 +684,14 @@ docker inspect propertycp-frontend | grep -A 10 Health
 - [ ] Security headers (Content-Security-Policy, etc.)
 
 **Database Security:**
+
 - [x] Database file permissions restricted
 - [ ] Regular backups scheduled
 - [ ] Backup encryption (optional)
 - [ ] Off-site backup storage
 
 **Monitoring:**
+
 - [ ] Application logs monitored
 - [ ] Failed login attempts tracked
 - [ ] AWS CloudWatch alarms set
@@ -723,6 +768,7 @@ docker inspect propertycp-frontend | grep -A 10 Health
 ### Current Setup Costs (AWS EC2)
 
 **t2.small instance (Recommended):**
+
 ```
 EC2 Instance (t2.small):     $17/month
 EBS Storage (30 GB gp3):     $3/month
@@ -733,6 +779,7 @@ Total:                       ~$20/month
 ```
 
 **t2.micro instance (Testing):**
+
 ```
 EC2 Instance (t2.micro):     $8/month (or Free Tier for 12 months)
 EBS Storage (20 GB gp3):     $2/month
@@ -745,6 +792,7 @@ Total:                       ~$10/month (or $2/month with Free Tier)
 ### Cost Comparison: Before vs After Migration
 
 **Before (C# + SQL Server + Azure/AWS):**
+
 ```
 SQL Server:                  $15-50/month
 C# hosting (larger instance): $50-100/month
@@ -753,6 +801,7 @@ Total:                       $65-150/month
 ```
 
 **After (Node.js + SQLite + EC2):**
+
 ```
 Single EC2 instance:         $17-20/month
 No separate database cost:   $0
@@ -868,6 +917,7 @@ Savings:                     $45-130/month (70-87% reduction)
 The application is **PRODUCTION-READY** with the following caveats:
 
 **Before Going Live:**
+
 1. Change default JWT_SECRET
 2. Change default user passwords
 3. Set up SSL certificate (if using domain)
@@ -876,6 +926,7 @@ The application is **PRODUCTION-READY** with the following caveats:
 6. Set up monitoring and alerting
 
 **Known Issues (Non-Critical):**
+
 - Some responsive design improvements recommended
 - TypeScript warnings in backend (do not affect runtime)
 - Default credentials need to be changed
@@ -886,6 +937,7 @@ The application is **PRODUCTION-READY** with the following caveats:
 ## 14. Contact & Support
 
 For questions or issues:
+
 - Repository: [GitHub URL]
 - Documentation: See README.md and AWS_DEPLOYMENT_GUIDE.md
 - Issues: Create an issue in the repository

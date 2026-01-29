@@ -1,9 +1,9 @@
-version: "3.8"
-
 services:
   # Backend API
   backend:
-    image: iamakx/propertycp-backend:latest
+    build:
+      context: ./propertycp-backend
+      dockerfile: Dockerfile
     container_name: propertycp-backend
     restart: unless-stopped
     ports:
@@ -49,7 +49,11 @@ services:
 
   # Frontend React App
   frontend:
-    image: iamakx/propertycp-react:latest
+    build:
+      context: ./propertycp-react
+      dockerfile: Dockerfile
+      args:
+        - REACT_APP_API_URL=${REACT_APP_API_URL:-http://localhost:3001/api}
     # Load .env so build args or runtime can pick values if needed
     env_file:
       - .env

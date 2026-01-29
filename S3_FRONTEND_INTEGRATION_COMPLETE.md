@@ -9,18 +9,15 @@ All three frontend pages have been successfully integrated with AWS S3 upload fu
 ### Changes Made:
 
 - **Added imports:**
-
   - `MediaUploadManager` component for handling multiple file uploads
   - `uploadPropertyFiles` service function for S3 uploads
 
 - **Added state management:**
-
   - `mediaFiles`: Array of files selected for upload
   - `mainImageId`: ID of the image set as main/thumbnail
   - `uploading`: Loading state during file upload
 
 - **Added handlers:**
-
   - `handleMediaSelected()`: Process selected files from MediaUploadManager
   - `handleMediaDeleted()`: Remove file from selection
   - Updated `handleSubmit()`: Now uploads media files to S3 after property creation
@@ -50,24 +47,20 @@ All three frontend pages have been successfully integrated with AWS S3 upload fu
 ### Changes Made:
 
 - **Added imports:**
-
   - `MediaUploadManager` component for managing files
   - `uploadPropertyFiles` and `deletePropertyFile` services
 
 - **Added state management:**
-
   - `uploading`: Loading state during operations
   - `error`: Error message display
   - `mainImageId`: Track main image selection
 
 - **Updated `loadProperty()` function:**
-
   - Properly formats existing S3 images from database
   - Handles both new format (link/url) and legacy formats
   - Sets main image ID based on property mainImage field
 
 - **Added handlers:**
-
   - `handleMediaSelected()`: Accept files from MediaUploadManager
   - Updated `handleDeleteImage()`: Now calls S3 delete API before removing from state
   - Properly tracks mainImageId when deleting the main image
@@ -96,22 +89,18 @@ All three frontend pages have been successfully integrated with AWS S3 upload fu
 ### Changes Made:
 
 - **Added imports:**
-
   - `KYCDocumentUpload` component for single document uploads
   - `uploadKYCDocument` and `deleteKYCDocument` services
 
 - **Added state management:**
-
   - `uploading`: Loading state during file operations
 
 - **Added handlers:**
-
   - `handleKYCUpload()`: Store S3 URL when document is uploaded
   - `handleKYCDelete()`: Clear document on delete
   - Updated `handleSubmit()`: Now stores S3 URLs in user record instead of local URLs
 
 - **Replaced JSX:**
-
   - Removed manual file input buttons with custom file logic
   - Replaced with 3 `<KYCDocumentUpload>` components (one for each document type)
   - Each component handles its own upload/delete flow
@@ -278,14 +267,12 @@ deleteKYCDocument(documentType);
 All three pages include comprehensive error handling:
 
 1. **File Validation Errors:**
-
    - File size exceeded
    - File type not allowed
    - Too many files selected
    - Duplicate uploads
 
 2. **Network Errors:**
-
    - S3 upload failures
    - API request timeouts
    - Network connectivity issues
@@ -301,7 +288,6 @@ All three pages include comprehensive error handling:
 ## Testing Checklist
 
 - [ ] **PostProperty.js:**
-
   - [ ] Can create property without media
   - [ ] Can upload 5 images + 1 video
   - [ ] Can delete files before submission
@@ -310,7 +296,6 @@ All three pages include comprehensive error handling:
   - [ ] Database is updated with image URLs
 
 - [ ] **EditPropertyImage.js:**
-
   - [ ] Loads existing images from S3
   - [ ] Can add new images
   - [ ] Can delete images from S3
@@ -335,17 +320,15 @@ All three pages include comprehensive error handling:
 1. Ensure AWS S3 bucket exists with name: `propertycp`
 2. Verify S3 bucket has correct CORS configuration
 3. Set environment variables:
-
    - `AWS_REGION=eu-north-1`
    - `AWS_ACCESS_KEY_ID=<your-key>`
    - `AWS_SECRET_ACCESS_KEY=<your-secret>`
    - `AWS_S3_BUCKET=propertycp`
 
-4. Rebuild Docker containers:
+4. Restart Docker containers with updated configuration:
 
    ```bash
-   docker-compose down
-   docker-compose up --build
+   docker compose down && docker compose pull && docker compose up -d
    ```
 
 5. Test file uploads on staging server before production rollout

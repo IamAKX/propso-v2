@@ -20,12 +20,14 @@ Complete guide to deploy PropertyCP (React frontend + Node.js backend + SQLite d
 ## Prerequisites
 
 ### Local Machine Requirements
+
 - AWS Account with billing enabled
 - AWS CLI installed (optional but recommended)
 - SSH client (Terminal on Mac/Linux, PuTTY on Windows)
 - Git installed
 
 ### AWS Resources Needed
+
 - EC2 instance (t2.micro or t2.small recommended)
 - Security Group with proper inbound rules
 - Key Pair for SSH access
@@ -44,17 +46,20 @@ Complete guide to deploy PropertyCP (React frontend + Node.js backend + SQLite d
 2. **Configure Instance**
 
    **Name and Tags:**
+
    ```
    Name: propertycp-server
    ```
 
    **Application and OS Images (AMI):**
+
    ```
    Ubuntu Server 22.04 LTS (HVM), SSD Volume Type
    Architecture: 64-bit (x86)
    ```
 
    **Instance Type:**
+
    ```
    t2.small (2 vCPU, 2 GiB RAM) - Recommended
    or
@@ -83,6 +88,7 @@ Complete guide to deploy PropertyCP (React frontend + Node.js backend + SQLite d
    | Custom TCP | TCP | 3001 | 0.0.0.0/0 | Backend API |
 
    **Storage:**
+
    ```
    Type: gp3 (General Purpose SSD)
    Size: 20 GiB (minimum), 30 GiB (recommended)
@@ -153,6 +159,7 @@ exit
 ```
 
 **Reconnect to the server:**
+
 ```bash
 ssh -i /path/to/propertycp-key.pem ubuntu@YOUR_EC2_PUBLIC_IP
 ```
@@ -220,6 +227,7 @@ REACT_APP_API_URL=http://YOUR_EC2_PUBLIC_IP:3001/api
 ```
 
 **Generate secure JWT secret:**
+
 ```bash
 # Generate random 64-character string
 openssl rand -base64 48
@@ -227,28 +235,25 @@ openssl rand -base64 48
 
 **Save and exit:** Press `Ctrl+X`, then `Y`, then `Enter`
 
-### Step 7: Build and Start Application
+### Step 7: Start Application
 
 ```bash
 # Make sure you're in the project directory
 cd ~/propertycp
 
-# Start services (fast)
-docker-compose up -d --build
-
-# Full rebuild and recreate (recommended when you changed environment variables, frontend build, or Dockerfiles):
-# If you have Docker Compose v2 (recommended):
-docker compose down && docker compose up -d --build --force-recreate --remove-orphans
-# If you have the older docker-compose CLI:
-docker-compose down && docker-compose up -d --build --force-recreate --remove-orphans
-```
+# Pull pre-built images and start services (RECOMMENDED - Fastest on t3.small)
+docker compose down && docker compose up -d --force-recreate --remove-orphans
 
 # This will:
-# 1. Build backend Docker image
-# 2. Build frontend Docker image
+# 1. Pull pre-built backend image from Docker Hub (iamakx/propertycp-backend:latest)
+# 2. Pull pre-built frontend image from Docker Hub (iamakx/propertycp-react:latest)
 # 3. Start both containers
-# 4. Initialize SQLite database with seed data
+# 4. Initialize SQLite database with seed data automatically
 ```
+
+**Note**: Using pre-built images is much faster than building on small EC2 instances. The Dockerfile command automatically seeds the database on startup.
+
+````
 
 ### Step 8: Verify Deployment
 
@@ -275,23 +280,26 @@ curl http://localhost:3001
 # Test frontend
 curl http://localhost:3000
 # Expected: HTML content
-```
+````
 
 ### Step 9: Access Your Application
 
 Open your browser and navigate to:
 
 **Frontend:**
+
 ```
 http://YOUR_EC2_PUBLIC_IP:3000
 ```
 
 **Backend API:**
+
 ```
 http://YOUR_EC2_PUBLIC_IP:3001
 ```
 
 **Default Login Credentials:**
+
 - Admin: admin@example.com / admin123
 - Agent: john@example.com / password123
 
@@ -391,11 +399,13 @@ nano .env
 ```
 
 Update API URL:
+
 ```bash
 REACT_APP_API_URL=https://api.yourdomain.com/api
 ```
 
 Rebuild frontend:
+
 ```bash
 docker-compose up -d --build frontend
 ```
@@ -526,6 +536,7 @@ docker system df
 ### Issue 1: Cannot connect to EC2 instance
 
 **Solution:**
+
 ```bash
 # Check Security Group allows SSH from your IP
 # Verify key permissions
@@ -538,6 +549,7 @@ chmod 400 /path/to/propertycp-key.pem
 ### Issue 2: Containers won't start
 
 **Solution:**
+
 ```bash
 # Check logs
 docker-compose logs
@@ -557,6 +569,7 @@ docker-compose up -d --build
 ### Issue 3: Frontend can't connect to backend
 
 **Solution:**
+
 ```bash
 # Check backend is running
 curl http://localhost:3001
@@ -571,6 +584,7 @@ docker-compose up -d --build frontend
 ### Issue 4: Database errors
 
 **Solution:**
+
 ```bash
 # Reinitialize database
 docker exec -it propertycp-backend bun run src/db/init.ts
@@ -585,6 +599,7 @@ docker exec -it propertycp-backend ls -la /app/database/propertycp.db
 ### Issue 5: Out of memory
 
 **Solution:**
+
 ```bash
 # Check memory usage
 free -h
@@ -604,6 +619,7 @@ echo '/swapfile none swap sw 0 0' | sudo tee -a /etc/fstab
 ### Issue 6: SSL certificate issues
 
 **Solution:**
+
 ```bash
 # Renew certificate manually
 sudo certbot renew
@@ -625,12 +641,14 @@ sudo certbot certificates
 ### Estimated Monthly Costs
 
 **t2.micro (Free Tier eligible for 12 months):**
+
 - Instance: $0 (if in free tier) or ~$8/month
 - Storage (30 GB): ~$3/month
 - Data Transfer: ~$1-5/month
 - **Total: ~$4-13/month**
 
 **t2.small (Recommended):**
+
 - Instance: ~$17/month
 - Storage (30 GB): ~$3/month
 - Data Transfer: ~$1-5/month
@@ -680,14 +698,17 @@ Before going live, ensure:
 ## Support and Resources
 
 **AWS Documentation:**
+
 - [EC2 User Guide](https://docs.aws.amazon.com/ec2/)
 - [Security Best Practices](https://docs.aws.amazon.com/security/)
 
 **Docker Documentation:**
+
 - [Docker Compose](https://docs.docker.com/compose/)
 - [Docker Security](https://docs.docker.com/engine/security/)
 
 **Application Support:**
+
 - GitHub Issues: [Your repository URL]
 - Documentation: `/README.md`, `/QUICKSTART.md`
 

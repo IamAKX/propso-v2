@@ -10,8 +10,8 @@ If you have Docker installed, this is the fastest way:
 # Navigate to project root
 cd /Users/akash/Documents/cp
 
-# Start everything with one command
-docker-compose up -d
+# Pull pre-built images and start (one command!)
+docker compose down && docker compose pull && docker compose up -d
 
 # Wait 30 seconds for initialization, then access:
 # Frontend: http://localhost:3000
@@ -72,10 +72,12 @@ npm start
 Once the app is running, log in with:
 
 **Admin Account** (can see all users and leads):
+
 - Email: `admin@example.com`
 - Password: `admin123`
 
 **Agent Account** (can create properties and leads):
+
 - Email: `john@example.com`
 - Password: `password123`
 
@@ -107,11 +109,13 @@ docker-compose down -v
 ## 🛑 Stopping the Application
 
 ### Docker:
+
 ```bash
 docker-compose down
 ```
 
 ### Local Development:
+
 Press `Ctrl+C` in both terminal windows (backend and frontend)
 
 ## 📁 Project Files
@@ -139,11 +143,13 @@ lsof -ti:3001 | xargs kill -9
 ### Backend won't start
 
 Make sure Bun is installed:
+
 ```bash
 bun --version
 ```
 
 If not installed, run:
+
 ```bash
 curl -fsSL https://bun.sh/install | bash
 ```
@@ -151,6 +157,7 @@ curl -fsSL https://bun.sh/install | bash
 ### Can't login / Database errors
 
 Reinitialize the database:
+
 ```bash
 cd /Users/akash/Documents/cp/propertycp-backend
 bun run db:init
@@ -159,6 +166,7 @@ bun run db:init
 ### Frontend shows "Network Error"
 
 Make sure backend is running on port 3001:
+
 ```bash
 curl http://localhost:3001
 # Should return: {"success":true,"message":"PropertyCP Backend API","version":"1.0.0"}
