@@ -18,7 +18,7 @@ services:
       - NODE_ENV=${NODE_ENV:-production}
       - CORS_ALLOW_ALL_IPS=${CORS_ALLOW_ALL_IPS:-true}
       - CORS_ALLOW_ALL=${CORS_ALLOW_ALL:-false}
-      - CORS_ORIGIN=${CORS_ORIGIN:-http://16.16.144.244:3000,http://localhost:3000}
+      - CORS_ORIGIN=${CORS_ORIGIN:-http://13.49.221.47:3000,http://localhost:3000}
     volumes:
       - backend-db:/app/database
     networks:
