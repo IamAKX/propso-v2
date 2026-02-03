@@ -105,7 +105,7 @@ const Login = () => {
             }}
           >
             <Typography variant="h4" sx={{ color: 'white', fontWeight: 700 }}>
-              PropertyCP
+              PropSO
             </Typography>
             <Typography variant="body2" sx={{ color: 'white', opacity: 0.9, mt: 0.5 }}>
               Real Estate Platform

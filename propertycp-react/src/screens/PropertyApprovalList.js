@@ -29,6 +29,8 @@ import {
   Cancel,
   LocationOn,
   Home as HomeIcon,
+  Delete,
+  Sell,
 } from '@mui/icons-material';
 import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
@@ -144,6 +146,48 @@ const PropertyApprovalList = () => {
     }
   };
 
+  const handleMarkAsSold = async (propertyId) => {
+    setLoading(true);
+    setError('');
+    setSuccess('');
+    try {
+      const response = await api.markPropertyAsSold(propertyId);
+      if (response.success) {
+        setSuccess('Property marked as sold successfully');
+        loadProperties();
+      } else {
+        setError(response.message || 'Failed to mark property as sold');
+      }
+    } catch (error) {
+      console.error('Error marking property as sold:', error);
+      setError(error.message || 'Failed to mark property as sold');
+    } finally {
+      setLoading(false);
+      setConfirmDialog({ open: false, type: null, propertyId: null, propertyTitle: '' });
+    }
+  };
+
+  const handleDelete = async (propertyId) => {
+    setLoading(true);
+    setError('');
+    setSuccess('');
+    try {
+      const response = await api.deletePropertyAdmin(propertyId);
+      if (response.success) {
+        setSuccess('Property and all related data deleted successfully');
+        loadProperties();
+      } else {
+        setError(response.message || 'Failed to delete property');
+      }
+    } catch (error) {
+      console.error('Error deleting property:', error);
+      setError(error.message || 'Failed to delete property');
+    } finally {
+      setLoading(false);
+      setConfirmDialog({ open: false, type: null, propertyId: null, propertyTitle: '' });
+    }
+  };
+
   const openConfirmDialog = (type, propertyId, propertyTitle) => {
     setConfirmDialog({ open: true, type, propertyId, propertyTitle });
   };
@@ -157,6 +201,10 @@ const PropertyApprovalList = () => {
       handleApprove(confirmDialog.propertyId);
     } else if (confirmDialog.type === 'reject') {
       handleReject(confirmDialog.propertyId);
+    } else if (confirmDialog.type === 'sold') {
+      handleMarkAsSold(confirmDialog.propertyId);
+    } else if (confirmDialog.type === 'delete') {
+      handleDelete(confirmDialog.propertyId);
     }
   };
 
@@ -168,6 +216,8 @@ const PropertyApprovalList = () => {
         return 'warning';
       case 'Rejected':
         return 'error';
+      case 'Sold':
+        return 'info';
       default:
         return 'default';
     }
@@ -219,6 +269,7 @@ const PropertyApprovalList = () => {
                   <MenuItem value="All">All</MenuItem>
                   <MenuItem value="Pending">Pending</MenuItem>
                   <MenuItem value="Approved">Approved</MenuItem>
+                  <MenuItem value="Sold">Sold</MenuItem>
                   <MenuItem value="Rejected">Rejected</MenuItem>
                 </TextField>
               </Grid>
@@ -372,6 +423,32 @@ const PropertyApprovalList = () => {
                           </Button>
                         </Box>
                       )}
+
+                      {/* Action Buttons for Approved Properties */}
+                      {property.approved === 'Approved' && (
+                        <Box sx={{ display: 'flex', gap: 1 }}>
+                          <Button
+                            variant="contained"
+                            color="info"
+                            startIcon={<Sell />}
+                            onClick={() =>
+                              openConfirmDialog('sold', property.id, property.title)
+                            }
+                          >
+                            Mark as Sold
+                          </Button>
+                          <Button
+                            variant="contained"
+                            color="error"
+                            startIcon={<Delete />}
+                            onClick={() =>
+                              openConfirmDialog('delete', property.id, property.title)
+                            }
+                          >
+                            Delete
+                          </Button>
+                        </Box>
+                      )}
                     </CardContent>
                   </Box>
                 </Card>
@@ -384,13 +461,21 @@ const PropertyApprovalList = () => {
       {/* Confirmation Dialog */}
       <Dialog open={confirmDialog.open} onClose={closeConfirmDialog}>
         <DialogTitle>
-          {confirmDialog.type === 'approve' ? 'Approve Property' : 'Reject Property'}
+          {confirmDialog.type === 'approve' && 'Approve Property'}
+          {confirmDialog.type === 'reject' && 'Reject Property'}
+          {confirmDialog.type === 'sold' && 'Mark Property as Sold'}
+          {confirmDialog.type === 'delete' && 'Delete Property'}
         </DialogTitle>
         <DialogContent>
           <DialogContentText>
-            {confirmDialog.type === 'approve'
-              ? `Are you sure you want to approve "${confirmDialog.propertyTitle}"? This will make the property visible to all users.`
-              : `Are you sure you want to reject "${confirmDialog.propertyTitle}"? This will permanently delete the property and all associated images from S3. This action cannot be undone.`}
+            {confirmDialog.type === 'approve' &&
+              `Are you sure you want to approve "${confirmDialog.propertyTitle}"? This will make the property visible to all users.`}
+            {confirmDialog.type === 'reject' &&
+              `Are you sure you want to reject "${confirmDialog.propertyTitle}"? This will permanently delete the property and all associated images from S3. This action cannot be undone.`}
+            {confirmDialog.type === 'sold' &&
+              `Are you sure you want to mark "${confirmDialog.propertyTitle}" as sold? This will hide the property from the home page and show it with "Sold" status in the admin panel.`}
+            {confirmDialog.type === 'delete' &&
+              `Are you sure you want to delete "${confirmDialog.propertyTitle}"? This will permanently delete the property, all related entries (favorites, leads), and all associated images from S3. This action cannot be undone.`}
           </DialogContentText>
         </DialogContent>
         <DialogActions>
@@ -399,11 +484,20 @@ const PropertyApprovalList = () => {
           </Button>
           <Button
             onClick={handleConfirmAction}
-            color={confirmDialog.type === 'approve' ? 'success' : 'error'}
+            color={
+              confirmDialog.type === 'approve'
+                ? 'success'
+                : confirmDialog.type === 'sold'
+                ? 'info'
+                : 'error'
+            }
             variant="contained"
             autoFocus
           >
-            {confirmDialog.type === 'approve' ? 'Approve' : 'Reject'}
+            {confirmDialog.type === 'approve' && 'Approve'}
+            {confirmDialog.type === 'reject' && 'Reject'}
+            {confirmDialog.type === 'sold' && 'Mark as Sold'}
+            {confirmDialog.type === 'delete' && 'Delete'}
           </Button>
         </DialogActions>
       </Dialog>

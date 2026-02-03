@@ -66,7 +66,7 @@ properties.get('/', async (c) => {
     const conditions: string[] = [];
     const params: any[] = [];
 
-    // All users (including admins) can only see approved properties on home page
+    // All users can only see approved properties on home page (exclude Sold)
     conditions.push('approved = ?');
     params.push('Approved');
 
@@ -361,34 +361,68 @@ properties.put('/:id', authMiddleware, async (c) => {
   }
 });
 
-// Delete property
-properties.delete('/:id', authMiddleware, async (c) => {
+// Delete property (Admin only) - Deletes property, related entries, and all S3 images
+properties.delete('/:id', authMiddleware, adminMiddleware, async (c) => {
   try {
     const id = c.req.param('id');
-    const currentUser = c.get('user') as AuthUser;
 
-    // Check if property exists and user has permission
-    const existingProperty = db.prepare('SELECT created_by_id FROM properties WHERE id = ?').get(id) as any;
+    // Check if property exists
+    const property = db.prepare('SELECT * FROM properties WHERE id = ?').get(id) as any;
 
-    if (!existingProperty) {
+    if (!property) {
       return c.json({
         success: false,
         message: 'Property not found',
       }, 404);
     }
 
-    if (existingProperty.created_by_id !== currentUser.id && currentUser.userType !== 'Admin') {
-      return c.json({
-        success: false,
-        message: 'Unauthorized to delete this property',
-      }, 403);
+    // Delete all S3 images associated with this property
+    const deletePromises: Promise<void>[] = [];
+
+    // Delete main image
+    if (property.main_image) {
+      try {
+        const mainImageKey = extractS3KeyFromUrl(property.main_image);
+        deletePromises.push(deleteFromS3(mainImageKey));
+      } catch (error) {
+        console.error('Error deleting main image:', error);
+      }
     }
 
+    // Delete all other images
+    if (property.images) {
+      try {
+        const imagesArray = JSON.parse(property.images);
+        imagesArray.forEach((image: any) => {
+          if (image.link) {
+            try {
+              const imageKey = extractS3KeyFromUrl(image.link);
+              deletePromises.push(deleteFromS3(imageKey));
+            } catch (error) {
+              console.error(`Error deleting image ${image.id}:`, error);
+            }
+          }
+        });
+      } catch (error) {
+        console.error('Error parsing images JSON:', error);
+      }
+    }
+
+    // Wait for all S3 deletions to complete
+    await Promise.allSettled(deletePromises);
+
+    // Delete related entries from favorites table (will cascade due to FK constraint)
+    db.prepare('DELETE FROM favorites WHERE property_id = ?').run(id);
+
+    // Delete associated leads
+    db.prepare('DELETE FROM leads WHERE property_id = ?').run(id);
+
+    // Delete property from database
     db.prepare('DELETE FROM properties WHERE id = ?').run(id);
 
     return c.json({
       success: true,
-      message: 'Property deleted successfully',
+      message: 'Property and all related data deleted successfully',
     });
   } catch (error: any) {
     console.error('Delete property error:', error);
@@ -494,6 +528,12 @@ properties.post('/:id/reject', authMiddleware, adminMiddleware, async (c) => {
     // Wait for all S3 deletions to complete (with error handling)
     await Promise.allSettled(deletePromises);
 
+    // Delete related entries from favorites table
+    db.prepare('DELETE FROM favorites WHERE property_id = ?').run(id);
+
+    // Delete associated leads
+    db.prepare('DELETE FROM leads WHERE property_id = ?').run(id);
+
     // Delete property from database
     db.prepare('DELETE FROM properties WHERE id = ?').run(id);
 
@@ -506,6 +546,51 @@ properties.post('/:id/reject', authMiddleware, adminMiddleware, async (c) => {
     return c.json({
       success: false,
       message: error.message || 'Failed to reject property',
+    }, 500);
+  }
+});
+
+// Mark property as Sold (Admin only)
+properties.post('/:id/sold', authMiddleware, adminMiddleware, async (c) => {
+  try {
+    const id = c.req.param('id');
+
+    // Check if property exists
+    const property = db.prepare('SELECT * FROM properties WHERE id = ?').get(id) as any;
+
+    if (!property) {
+      return c.json({
+        success: false,
+        message: 'Property not found',
+      }, 404);
+    }
+
+    // Update property status to Sold
+    db.prepare(`
+      UPDATE properties
+      SET approved = 'Sold', updated_date = datetime('now')
+      WHERE id = ?
+    `).run(id);
+
+    // Fetch updated property
+    const updatedProperty = db.prepare('SELECT * FROM properties WHERE id = ?').get(id);
+    const propertyData = toCamelCase(updatedProperty);
+
+    // Parse images JSON
+    if (propertyData.images) {
+      propertyData.images = JSON.parse(propertyData.images);
+    }
+
+    return c.json({
+      success: true,
+      message: 'Property marked as sold successfully',
+      data: propertyData,
+    });
+  } catch (error: any) {
+    console.error('Mark property as sold error:', error);
+    return c.json({
+      success: false,
+      message: error.message || 'Failed to mark property as sold',
     }, 500);
   }
 });

@@ -4,6 +4,7 @@ import db from '../db/database';
 export interface AuthUser {
   id: number;
   email: string;
+  fullName: string;
   userType: string;
 }
 
@@ -20,7 +21,7 @@ export const authMiddleware = async (c: Context, next: Next) => {
     }
 
     // Fetch user from database to get full user info
-    const user = db.prepare('SELECT id, email, user_type FROM users WHERE id = ?').get(userId) as any;
+    const user = db.prepare('SELECT id, email, full_name, user_type FROM users WHERE id = ?').get(userId) as any;
 
     if (!user) {
       return c.json({
@@ -33,6 +34,7 @@ export const authMiddleware = async (c: Context, next: Next) => {
     c.set('user', {
       id: user.id,
       email: user.email,
+      fullName: user.full_name,
       userType: user.user_type,
     });
 

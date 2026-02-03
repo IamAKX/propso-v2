@@ -36,7 +36,7 @@ CREATE TABLE IF NOT EXISTS properties (
   area_unit TEXT,
   description TEXT,
   builder_phone_number TEXT,
-  approved TEXT DEFAULT 'Pending' CHECK(approved IN ('Pending', 'Approved', 'Rejected')),
+  approved TEXT DEFAULT 'Pending' CHECK(approved IN ('Pending', 'Approved', 'Rejected', 'Sold')),
   created_by_id INTEGER,
   created_date TEXT DEFAULT (datetime('now')),
   updated_date TEXT DEFAULT (datetime('now')),

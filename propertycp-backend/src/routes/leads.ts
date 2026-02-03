@@ -316,11 +316,13 @@ leads.post('/:id/comments', authMiddleware, async (c) => {
       comments = JSON.parse(existingLead.lead_comment_model);
     }
 
-    // Add new comment
+    // Add new comment with user information
     const newComment = {
       id: comments.length + 1,
       comment,
       leadId: parseInt(id),
+      createdBy: currentUser.id,
+      createdByName: currentUser.fullName,
       createdDate: new Date().toISOString(),
     };
     comments.push(newComment);

@@ -29,6 +29,9 @@ import {
   Cancel,
   ArrowForward,
   Home as HomeIcon,
+  Visibility,
+  LocationOn,
+  BedroomParent,
 } from '@mui/icons-material';
 import { format } from 'date-fns';
 import { useAuth } from '../context/AuthContext';
@@ -207,18 +210,15 @@ const LeadComment = () => {
         </Card>
 
         {/* Associated Property */}
-        {property && (
+        {property ? (
           <Card
             sx={{
               mb: 3,
-              cursor: 'pointer',
-              transition: 'all 0.2s',
-              '&:hover': {
-                transform: 'translateY(-2px)',
-                boxShadow: 4,
-              },
+              border: '2px solid',
+              borderColor: 'primary.light',
+              position: 'relative',
+              overflow: 'visible',
             }}
-            onClick={() => navigate(`/property/${property.id}`)}
           >
             <CardContent>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
@@ -226,42 +226,105 @@ const LeadComment = () => {
                 <Typography variant="h6" fontWeight="600">
                   Associated Property
                 </Typography>
+                <Chip label="Linked" size="small" color="primary" variant="outlined" />
               </Box>
-              <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
-                <Box
-                  component="img"
-                  src={property.mainImage}
-                  alt={property.title}
-                  sx={{
-                    width: 100,
-                    height: 100,
-                    borderRadius: 1,
-                    objectFit: 'cover',
-                  }}
-                />
-                <Box sx={{ flex: 1 }}>
-                  <Typography variant="subtitle1" fontWeight="700">
-                    {property.title}
+
+              <Box
+                component="img"
+                src={property.mainImage}
+                alt={property.title}
+                sx={{
+                  width: '100%',
+                  height: 200,
+                  borderRadius: 2,
+                  objectFit: 'cover',
+                  mb: 2,
+                }}
+              />
+
+              <Typography variant="h5" fontWeight="700" gutterBottom>
+                {property.title}
+              </Typography>
+
+              {property.subTitle && (
+                <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                  {property.subTitle}
+                </Typography>
+              )}
+
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+                <LocationOn fontSize="small" color="action" />
+                <Typography variant="body1" color="text.secondary">
+                  {property.location}, {property.city}
+                </Typography>
+              </Box>
+
+              <Grid container spacing={2} sx={{ mb: 2 }}>
+                <Grid item xs={4}>
+                  <Typography variant="caption" color="text.secondary">
+                    Type
                   </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    {property.location}, {property.city}
+                  <Typography variant="body2" fontWeight="600">
+                    {property.type}
                   </Typography>
-                  <Typography variant="h6" color="primary.main" sx={{ mt: 0.5 }}>
+                </Grid>
+                {property.bhk && (
+                  <Grid item xs={4}>
+                    <Typography variant="caption" color="text.secondary">
+                      BHK
+                    </Typography>
+                    <Typography variant="body2" fontWeight="600">
+                      {property.bhk}
+                    </Typography>
+                  </Grid>
+                )}
+                {property.area && (
+                  <Grid item xs={4}>
+                    <Typography variant="caption" color="text.secondary">
+                      Area
+                    </Typography>
+                    <Typography variant="body2" fontWeight="600">
+                      {property.area} {property.areaUnit || 'Sqft'}
+                    </Typography>
+                  </Grid>
+                )}
+              </Grid>
+
+              <Divider sx={{ my: 2 }} />
+
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <Box>
+                  <Typography variant="caption" color="text.secondary">
+                    Price
+                  </Typography>
+                  <Typography variant="h5" color="primary.main" fontWeight="700">
                     ₹{parseInt(property.price).toLocaleString('en-IN')}
                   </Typography>
                 </Box>
-                <IconButton
+                <Button
+                  variant="contained"
+                  size="large"
+                  endIcon={<Visibility />}
+                  onClick={() => navigate(`/property/${property.id}`)}
                   sx={{
-                    bgcolor: 'primary.main',
-                    color: 'white',
-                    '&:hover': { bgcolor: 'primary.dark' },
+                    px: 3,
+                    py: 1.5,
+                    borderRadius: 2,
+                    textTransform: 'none',
+                    fontWeight: 600,
                   }}
                 >
-                  <ArrowForward />
-                </IconButton>
+                  View Property Details
+                </Button>
               </Box>
             </CardContent>
           </Card>
+        ) : (
+          lead.propertyId && (
+            <Alert severity="warning" sx={{ mb: 3 }}>
+              The property associated with this lead is no longer available (may have been deleted or is not approved).
+            </Alert>
+          )
         )}
 
         {/* Status Management */}
@@ -317,13 +380,20 @@ const LeadComment = () => {
                   >
                     <Box sx={{ display: 'flex', alignItems: 'start', gap: 1, mb: 1 }}>
                       <Person fontSize="small" color="action" />
-                      <Box>
-                        <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.75rem' }}>
-                          {format(new Date(commentItem.createdDate), 'MMM dd, yyyy • hh:mm a')}
-                        </Typography>
+                      <Box sx={{ flex: 1 }}>
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 1 }}>
+                          <Typography variant="body2" fontWeight="600" color="text.primary">
+                            {commentItem.createdByName || 'Unknown User'}
+                          </Typography>
+                          <Typography variant="caption" color="text.secondary">
+                            {format(new Date(commentItem.createdDate), 'MMM dd, yyyy • hh:mm a')}
+                          </Typography>
+                        </Box>
                       </Box>
                     </Box>
-                    <Typography variant="body1">{commentItem.comment}</Typography>
+                    <Typography variant="body1" sx={{ pl: 3 }}>
+                      {commentItem.comment}
+                    </Typography>
                   </Paper>
                 ))}
               </Box>
