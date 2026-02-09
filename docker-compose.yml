@@ -18,7 +18,7 @@ services:
       - NODE_ENV=${NODE_ENV:-production}
       - CORS_ALLOW_ALL_IPS=${CORS_ALLOW_ALL_IPS:-true}
       - CORS_ALLOW_ALL=${CORS_ALLOW_ALL:-false}
-      - CORS_ORIGIN=${CORS_ORIGIN:-http://16.16.101.72,http://localhost:80}
+      - CORS_ORIGIN=${CORS_ORIGIN:-http://16.16.101.72,http://localhost:80,http://www.propso.in,https://www.propso.in}
     volumes:
       - backend-db:/app/database
     networks:
