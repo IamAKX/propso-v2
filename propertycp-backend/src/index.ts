@@ -26,7 +26,7 @@ const app = new Hono();
 // Middleware
 const allowedOrigins = process.env.CORS_ORIGIN
   ? process.env.CORS_ORIGIN.split(',').map((s) => s.trim())
-  : ['http://localhost:3000', 'http://localhost:3001'];
+  : ['http://localhost:80', 'http://localhost', 'http://localhost:3000', 'http://localhost:3001'];
 
 // CORS middleware: keep localhost by default; optionally allow all IP origins or all origins using env flags
 app.use('*', async (c, next) => {
