@@ -124,14 +124,6 @@ properties.get('/:id', async (c) => {
       }, 404);
     }
 
-    // All users (including admins) can only view approved properties
-    if (property.approved !== 'Approved') {
-      return c.json({
-        success: false,
-        message: 'Property not found',
-      }, 404);
-    }
-
     const propertyData = toCamelCase(property);
 
     // Parse images JSON

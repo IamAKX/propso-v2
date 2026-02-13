@@ -30,7 +30,7 @@ const PostProperty = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
-  const [formData, setFormData] = useState({
+  const initialFormData = {
     title: "",
     subTitle: "",
     price: "",
@@ -44,10 +44,27 @@ const PostProperty = () => {
     areaUnit: "Sqft",
     description: "",
     builderPhoneNumber: user?.mobileNo || "",
-  });
+  };
+
+  const [formData, setFormData] = useState(initialFormData);
   const [mediaFiles, setMediaFiles] = useState([]);
   const [mainImageId, setMainImageId] = useState(null);
   const [uploading, setUploading] = useState(false);
+
+  const resetForm = () => {
+    setFormData({
+      ...initialFormData,
+      builderPhoneNumber: user?.mobileNo || "",
+    });
+    setMediaFiles([]);
+    setMainImageId(null);
+    setError("");
+  };
+
+  const showError = (message) => {
+    setError(message);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
   const handleChange = (e) => {
     setFormData({
@@ -62,9 +79,17 @@ const PostProperty = () => {
     setError("");
   };
 
-  const handleMediaDeleted = (fileId) => {
-    setMediaFiles(mediaFiles.filter((f) => f.id !== fileId));
-    if (mainImageId === fileId) {
+  const handleMediaDeleted = (deletedPreview) => {
+    setMediaFiles((prevFiles) => {
+      // Find and remove the file that matches the deleted preview
+      const newFiles = prevFiles.filter((file, index) => {
+        // Match by comparing the file object reference stored in preview
+        return file !== deletedPreview.file;
+      });
+      return newFiles;
+    });
+
+    if (mainImageId === deletedPreview.id) {
       setMainImageId(null);
     }
   };
@@ -81,17 +106,17 @@ const PostProperty = () => {
       !formData.city ||
       !formData.location
     ) {
-      setError("Please fill in all required fields");
+      showError("Please fill in all required fields");
       return;
     }
 
     if (formData.title.length < 5) {
-      setError("Title must be at least 5 characters");
+      showError("Title must be at least 5 characters");
       return;
     }
 
     if (isNaN(formData.price) || parseInt(formData.price) <= 0) {
-      setError("Please enter a valid price");
+      showError("Please enter a valid price");
       return;
     }
 
@@ -99,32 +124,42 @@ const PostProperty = () => {
       formData.builderPhoneNumber.length !== 10 ||
       !/^\d+$/.test(formData.builderPhoneNumber)
     ) {
-      setError("Phone number must be exactly 10 digits");
+      showError("Phone number must be exactly 10 digits");
       return;
     }
 
     if (!isActive) {
-      setError(
+      showError(
         "Your account must be ACTIVE to post properties. Please complete KYC verification."
       );
       return;
     }
 
+    // Check if either image URL is provided or media files are uploaded
+    if (!formData.mainImage && mediaFiles.length === 0) {
+      showError("Please provide at least one image (upload files or provide image URL)");
+      return;
+    }
+
     setLoading(true);
+    let createdPropertyId = null;
+
     try {
-      // Use a default image if none provided
+      // Determine main image: use provided URL or placeholder (will be replaced by first uploaded image)
+      const mainImage = formData.mainImage || "https://placeholder.image/temp.jpg";
+
       const propertyData = {
         ...formData,
-        mainImage:
-          formData.mainImage ||
-          "https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=800",
+        mainImage,
         createdById: user.id,
         images: [],
       };
 
+      // Create property first
       const newProperty = await createProperty(propertyData);
+      createdPropertyId = newProperty.id;
 
-      // Upload media files if any
+      // Upload media files if any are selected
       if (mediaFiles.length > 0) {
         try {
           setUploading(true);
@@ -135,6 +170,7 @@ const PostProperty = () => {
           );
 
           // Update property with uploaded images from response
+          // The first uploaded image will become main image if no mainImageId was selected
           if (response.data?.allImages) {
             await updateProperty(newProperty.id, {
               images: response.data.allImages,
@@ -142,23 +178,37 @@ const PostProperty = () => {
             });
           }
         } catch (uploadErr) {
-          console.error(
-            "Media upload failed, but property created:",
-            uploadErr
-          );
-          setError("Property created but image upload failed. You can add images later from edit.");
-          // Continue even if media upload fails
+          // If image upload fails, delete the property and show error
+          try {
+            await fetch(`${process.env.REACT_APP_API_URL || "http://localhost:3001/api"}/properties/${createdPropertyId}`, {
+              method: "DELETE",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${localStorage.getItem("token")}`,
+              },
+            });
+          } catch (deleteErr) {
+            console.error("Failed to delete property after upload failure:", deleteErr);
+          }
+          throw new Error(uploadErr.message || "Failed to upload images");
         } finally {
           setUploading(false);
         }
       }
 
+      // Show success and reset form
       setSuccess(true);
+      resetForm();
+
+      // Scroll to top to show success message
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+
+      // Hide success message after 5 seconds
       setTimeout(() => {
-        navigate(`/property/${newProperty.id}`);
-      }, 1500);
+        setSuccess(false);
+      }, 5000);
     } catch (err) {
-      setError(err.message || "Failed to create property. Please try again.");
+      showError(err.message || "Failed to create property. Please try again.");
     } finally {
       setLoading(false);
       setUploading(false);
@@ -196,7 +246,7 @@ const PostProperty = () => {
 
             {success && (
               <Alert severity="success" sx={{ mb: 3 }}>
-                Property created successfully! Redirecting...
+                <strong>Property created successfully!</strong> Your property is pending approval. An admin will review and approve it from the admin panel before it becomes visible to users.
               </Alert>
             )}
 

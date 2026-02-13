@@ -126,20 +126,28 @@ uploads.post('/property/:propertyId', authMiddleware, async (c) => {
 
     // Determine main image URL
     let mainImageUrl = property.main_image;
+    const isPlaceholder = mainImageUrl && mainImageUrl.includes('placeholder.image');
 
     if (mainImageId) {
-      // Find the image with matching ID in allImages
+      // Priority 1: User selected a specific image as main from uploaded files
       const mainImg = allImages.find((img: any) => img.id?.toString() === mainImageId);
       if (mainImg) {
         mainImageUrl = mainImg.link;
       }
-    } else if (allImages.length > 0 && !mainImageUrl) {
-      // If no main image set yet, use first non-video image
+    } else if (newImages.length > 0 && isPlaceholder) {
+      // Priority 2: If uploading new files and current main is placeholder, use first uploaded non-video image
+      const firstImage = newImages.find((img: any) => !img.isVideo);
+      if (firstImage) {
+        mainImageUrl = firstImage.link;
+      }
+    } else if (!mainImageUrl || isPlaceholder) {
+      // Priority 3: If no main image or placeholder, use first image from all images
       const firstImage = allImages.find((img: any) => !img.isVideo);
       if (firstImage) {
         mainImageUrl = firstImage.link;
       }
     }
+    // If user provided image URL (not placeholder), keep it unless mainImageId is selected
 
     // Update property with new images and main image
     db.prepare('UPDATE properties SET images = ?, main_image = ?, updated_date = datetime("now") WHERE id = ?').run(

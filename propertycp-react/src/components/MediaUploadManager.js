@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Box,
   Button,
@@ -44,6 +44,38 @@ const MediaUploadManager = ({
   );
   const [dragActive, setDragActive] = useState(false);
 
+  // Sync internal state with initialFiles prop changes (for reset functionality)
+  // Only update if initialFiles length changes to avoid unnecessary resets
+  useEffect(() => {
+    // Check if this is a reset (parent cleared files) or initial load
+    if (initialFiles.length === 0) {
+      // Reset case: parent cleared the files
+      setFiles((prevFiles) => {
+        if (prevFiles.length > 0) {
+          setPreviewUrls([]);
+          return [];
+        }
+        return prevFiles;
+      });
+    } else if (initialFiles.length > 0) {
+      // Initial load case: parent provided files (e.g., editing existing property)
+      setFiles((prevFiles) => {
+        if (prevFiles.length === 0) {
+          setPreviewUrls(
+            initialFiles.map((f) => ({
+              id: f.id,
+              url: f.link,
+              isVideo: f.isVideo,
+              name: f.name || "File",
+            }))
+          );
+          return initialFiles;
+        }
+        return prevFiles;
+      });
+    }
+  }, [initialFiles.length, initialFiles]); // Depend on both length and array
+
   const imageCount = files.filter((f) => !f.isVideo).length;
   const videoCount = files.filter((f) => f.isVideo).length;
 
@@ -72,6 +104,8 @@ const MediaUploadManager = ({
   const handleFileInput = (e) => {
     const selectedFiles = Array.from(e.target.files || []);
     processFiles(selectedFiles);
+    // Reset input value so the same file can be selected again
+    e.target.value = '';
   };
 
   const processFiles = (fileList) => {
@@ -124,22 +158,32 @@ const MediaUploadManager = ({
       });
 
       Promise.all(newPreviews).then((previews) => {
-        const newFiles = previews.map((p) => p.file);
-        setFiles([...files, ...newFiles]);
-        setPreviewUrls([...previewUrls, ...previews]);
-        onFilesSelected([...files, ...newFiles]);
+        setPreviewUrls((prevUrls) => [...prevUrls, ...previews]);
+
+        setFiles((prevFiles) => {
+          const newFiles = previews.map((p) => p.file);
+          const updatedFiles = [...prevFiles, ...newFiles];
+          // Notify parent with updated files
+          onFilesSelected(updatedFiles);
+          return updatedFiles;
+        });
       });
     }
   };
 
   const handleDelete = (index) => {
-    const preview = previewUrls[index];
-    const newPreviewUrls = previewUrls.filter((_, i) => i !== index);
-    const newFiles = files.filter((_, i) => i !== index);
+    // Use functional updates to get current state
+    setPreviewUrls((prevUrls) => {
+      const preview = prevUrls[index];
+      const newPreviewUrls = prevUrls.filter((_, i) => i !== index);
 
-    setPreviewUrls(newPreviewUrls);
-    setFiles(newFiles);
-    onFileDeleted(preview);
+      // Call onFileDeleted callback
+      onFileDeleted(preview);
+
+      return newPreviewUrls;
+    });
+
+    setFiles((prevFiles) => prevFiles.filter((_, i) => i !== index));
   };
 
   const handleSetMainImage = (index) => {
@@ -205,7 +249,7 @@ const MediaUploadManager = ({
           </Typography>
           <Grid container spacing={2}>
             {previewUrls.map((preview, index) => (
-              <Grid item xs={12} sm={6} md={4} key={preview.id}>
+              <Grid item xs={12} sm={6} md={4} key={`${preview.id}-${index}`}>
                 <Card>
                   <Box sx={{ position: "relative" }}>
                     {preview.isVideo ? (

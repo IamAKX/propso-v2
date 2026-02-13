@@ -31,6 +31,7 @@ import {
   LocationOn,
   Home as HomeIcon,
   AspectRatio,
+  PlayCircle,
 } from '@mui/icons-material';
 import { useAuth } from '../context/AuthContext';
 import { useData } from '../context/DataContext';
@@ -120,6 +121,11 @@ const PropertyDetail = () => {
   const allImages = property.images || [];
   const isOwner = user.id === property.createdById && canManageProperties;
 
+  // Determine which image/video to display
+  const currentMedia = allImages.length > 0 ? allImages[currentImageIndex] : null;
+  const displayImage = currentMedia?.link || property.mainImage;
+  const isVideo = currentMedia?.isVideo || false;
+
   return (
     <Box sx={{ bgcolor: 'background.default', minHeight: '100vh' }}>
       <AppBar
@@ -166,16 +172,30 @@ const PropertyDetail = () => {
       <Container maxWidth="lg" sx={{ py: 4, pb: 10 }}>
         {/* Image Gallery */}
         <Card sx={{ mb: 3, overflow: 'hidden' }}>
-          <Box
-            component="img"
-            src={property.mainImage}
-            alt={property.title}
-            sx={{
-              width: '100%',
-              height: { xs: 250, sm: 400 },
-              objectFit: 'cover',
-            }}
-          />
+          {isVideo ? (
+            <Box
+              component="video"
+              src={displayImage}
+              controls
+              sx={{
+                width: '100%',
+                height: { xs: 250, sm: 400 },
+                objectFit: 'cover',
+                bgcolor: 'black',
+              }}
+            />
+          ) : (
+            <Box
+              component="img"
+              src={displayImage}
+              alt={property.title}
+              sx={{
+                width: '100%',
+                height: { xs: 250, sm: 400 },
+                objectFit: 'cover',
+              }}
+            />
+          )}
           {allImages.length > 1 && (
             <Box
               sx={{
@@ -188,22 +208,62 @@ const PropertyDetail = () => {
               {allImages.slice(0, 5).map((img, index) => (
                 <Box
                   key={img.id}
-                  component="img"
-                  src={img.link}
-                  alt={`Property ${index + 1}`}
                   sx={{
+                    position: 'relative',
                     width: 80,
                     height: 80,
-                    objectFit: 'cover',
-                    borderRadius: 1,
                     cursor: 'pointer',
-                    border: currentImageIndex === index ? '2px solid' : '1px solid',
-                    borderColor: currentImageIndex === index ? 'primary.main' : 'divider',
-                    opacity: currentImageIndex === index ? 1 : 0.6,
-                    '&:hover': { opacity: 1 },
                   }}
                   onClick={() => setCurrentImageIndex(index)}
-                />
+                >
+                  {img.isVideo ? (
+                    <>
+                      <Box
+                        component="video"
+                        src={img.link}
+                        sx={{
+                          width: '100%',
+                          height: '100%',
+                          objectFit: 'cover',
+                          borderRadius: 1,
+                          border: currentImageIndex === index ? '2px solid' : '1px solid',
+                          borderColor: currentImageIndex === index ? 'primary.main' : 'divider',
+                          opacity: currentImageIndex === index ? 1 : 0.6,
+                          '&:hover': { opacity: 1 },
+                          bgcolor: 'black',
+                        }}
+                      />
+                      <PlayCircle
+                        sx={{
+                          position: 'absolute',
+                          top: '50%',
+                          left: '50%',
+                          transform: 'translate(-50%, -50%)',
+                          fontSize: 32,
+                          color: 'white',
+                          pointerEvents: 'none',
+                          opacity: 0.9,
+                        }}
+                      />
+                    </>
+                  ) : (
+                    <Box
+                      component="img"
+                      src={img.link}
+                      alt={`Property ${index + 1}`}
+                      sx={{
+                        width: '100%',
+                        height: '100%',
+                        objectFit: 'cover',
+                        borderRadius: 1,
+                        border: currentImageIndex === index ? '2px solid' : '1px solid',
+                        borderColor: currentImageIndex === index ? 'primary.main' : 'divider',
+                        opacity: currentImageIndex === index ? 1 : 0.6,
+                        '&:hover': { opacity: 1 },
+                      }}
+                    />
+                  )}
+                </Box>
               ))}
             </Box>
           )}
